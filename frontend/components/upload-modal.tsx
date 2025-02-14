@@ -50,7 +50,7 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
           <DialogTitle className="text-2xl">Upload Audio Files</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="individual" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="individual" className="flex items-center gap-2">
               <UploadIcon className="h-4 w-4" />
               Individual
@@ -63,10 +63,10 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
               <Pencil className="h-4 w-4" />
               Record
             </TabsTrigger>
-            <TabsTrigger value="saved" className="flex items-center gap-2">
+            {/* <TabsTrigger value="saved" className="flex items-center gap-2">
               <BookmarkIcon className="h-4 w-4" />
               Saved
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="individual" className="mt-6">
@@ -104,8 +104,8 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
                     className="hidden"
                     onChange={handleFileChange}
                     multiple
-                    webkitdirectory=""
-                    directory=""
+                    // webkitdirectory="true"
+                    // directory="true"
                   />
                 </label>
               </Button>
@@ -122,18 +122,18 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="saved" className="mt-6">
+          {/* <TabsContent value="saved" className="mt-6">
             <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-10 space-y-4">
               <p className="text-lg font-medium text-center">No saved audio files</p>
               <p className="text-sm text-muted-foreground text-center">Previously uploaded files will appear here</p>
             </div>
-          </TabsContent>
+          </TabsContent> */}
         </Tabs>
 
-        <div className="flex flex-col gap-4 mt-4">
+        {/* <div className="flex flex-col gap-4 mt-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="language">Transcription Language</Label>
-            <Select defaultValue="auto" onValueChange={(e) => setTranscriptionLanguage(e)}>
+            <Select defaultValue="auto" onValueChange={(e: string) => setTranscriptionLanguage(e)}>
               <SelectTrigger id="language">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -149,7 +149,7 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
             <Checkbox
               id="clean-audio"
               checked={cleanAudio}
-              onCheckedChange={(checked) => setCleanAudio(checked as boolean)}
+              onCheckedChange={(checked: boolean) => setCleanAudio(checked)}
             />
             <Label htmlFor="clean-audio">Clean audio and remove noise</Label>
           </div>
@@ -157,11 +157,11 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
             <Checkbox
               id="remove-background"
               checked={removeBackground}
-              onCheckedChange={(checked) => setRemoveBackground(checked as boolean)}
+              onCheckedChange={(checked: boolean) => setRemoveBackground(checked)}
             />
             <Label htmlFor="remove-background">Remove background noise</Label>
           </div>
-        </div>
+        </div> */}
 
         <p className="text-sm text-muted-foreground mt-4">
           I understand that these files will be processed according to the selected settings.

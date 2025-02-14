@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Mic, AudioWaveformIcon as Waveform, Layers, ArrowRight, Menu } from "lucide-react"
+import { Mic, Layers, ArrowRight, Menu } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import type React from "react"
 
@@ -69,12 +69,12 @@ export function LandingPage() {
               description="State-of-the-art AI models trained specifically for Khmer language"
               delay={0.2}
             />
-            <FeatureCard
+            {/* <FeatureCard
               icon={<Waveform className="h-8 w-8 md:h-10 md:w-10" />}
               title="Audio Enhancement"
               description="Noise reduction and clarity improvement for crystal-clear results"
               delay={0.4}
-            />
+            /> */}
             <FeatureCard
               icon={<Layers className="h-8 w-8 md:h-10 md:w-10" />}
               title="Batch Processing"

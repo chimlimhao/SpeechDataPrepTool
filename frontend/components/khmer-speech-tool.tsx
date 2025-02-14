@@ -10,8 +10,9 @@ import { DatasetStats } from "@/components/dataset-stats"
 import { Dashboard } from "@/components/dashboard"
 import { cn } from "@/lib/utils"
 import { UploadModal, type UploadSettings } from "./upload-modal"
-import { useToast } from "@/components/ui/use-toast"
+import { Toast } from "@/components/ui/toast"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 const navigation = [
   { name: "Dashboard", icon: Layout, href: "dashboard" },

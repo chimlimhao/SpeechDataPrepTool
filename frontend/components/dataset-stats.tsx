@@ -2,6 +2,7 @@
 
 import { Bar } from "react-chartjs-2"
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -31,29 +32,47 @@ const data = {
   ],
 }
 
-export function DatasetStats() {
+interface DatasetStatsProps {
+  projectId: string | null
+}
+
+export function DatasetStats({ projectId }: DatasetStatsProps) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dataset Statistics</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">Total Audio Files</h3>
-          <p className="text-3xl font-bold mt-2">341</p>
-        </div>
-        <div className="bg-card p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">Total Duration</h3>
-          <p className="text-3xl font-bold mt-2">14h 23m</p>
-        </div>
-        <div className="bg-card p-4 rounded-lg shadow">
-          <h3 className="text-lg font-semibold">Transcribed Files</h3>
-          <p className="text-3xl font-bold mt-2">287 (84%)</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Audio Files</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">341</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Duration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">14h 23m</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Transcribed Files</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">287 (84%)</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="bg-card p-4 rounded-lg shadow">
-        <Bar options={options} data={data} />
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <Bar options={options} data={data} />
+        </CardContent>
+      </Card>
     </div>
   )
 }
