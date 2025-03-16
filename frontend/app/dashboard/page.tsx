@@ -1,6 +1,20 @@
-import { KhmerSpeechTool } from "@/components/khmer-speech-tool"
+"use client"
+
+import { Dashboard } from "@/components/dashboard"
+import { useRouter } from "next/navigation"
 
 export default function DashboardPage() {
-  return <KhmerSpeechTool />
+  const router = useRouter()
+
+  const handleSelectProject = (projectId: string) => {
+    // Navigate to project details page
+    router.push(`/dashboard/projects/${projectId}`)
+  }
+
+  return (
+    <div className="p-8">
+      <Dashboard onSelectProject={handleSelectProject} />
+    </div>
+  )
 }
 
