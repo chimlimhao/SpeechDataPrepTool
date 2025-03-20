@@ -1,24 +1,26 @@
 import { AuthResponse, LoginCredentials } from '@/types/auth.types';
-import { authRepository } from '@/repositories/implementations';
+import { IAuthRepository } from '@/repositories/auth.repository';
 
 export class AuthService {
+  constructor(private authRepository: IAuthRepository) {}
+
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    return authRepository.login(credentials);
+    return this.authRepository.login(credentials);
   }
 
   async loginWithGoogle(): Promise<AuthResponse> {
-    return authRepository.loginWithGoogle();
+    return this.authRepository.loginWithGoogle();
   }
 
   async logout(): Promise<void> {
-    return authRepository.logout();
+    return this.authRepository.logout();
   }
 
   async getSession() {
-    return authRepository.getSession();
+    return this.authRepository.getSession();
   }
 
   subscribeToAuthChanges(callback: (user: any) => void) {
-    return authRepository.subscribeToAuthChanges(callback);
+    return this.authRepository.subscribeToAuthChanges(callback);
   }
 } 

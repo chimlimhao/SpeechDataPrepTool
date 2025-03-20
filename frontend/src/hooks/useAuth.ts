@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { User, LoginCredentials } from '@/types/auth.types';
-import { AuthService } from '@/services/auth.service';
-
-const authService = new AuthService();
+import { authService } from '@/services';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
