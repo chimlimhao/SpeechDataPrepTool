@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-backend/venv/
 __pycache__/
 *.pyc
 
@@ -32,3 +31,33 @@ yarn-error.log*
 # System Files
 .DS_Store
 Thumbs.db 
+.qodo
+
+# Frontend specific
+frontend/node_modules/
+frontend/.next/
+frontend/build/
+frontend/dist/
+frontend/out/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/coverage/
+frontend/.turbo/
+
+# Backend (ignored for now)
+backend/
+
+# Machine Learning (ignored for now)
+machine-learning/
+
+# Docker
+docker-compose.override.yml
+
+
+
+
+
+
