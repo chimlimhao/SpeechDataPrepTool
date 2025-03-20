@@ -1,6 +1,6 @@
 "use client"
 
-import { Dashboard } from "@/components/dashboard"
+import { Dashboard } from "@/components/dashboard/dashboard"
 import { useRouter } from "next/navigation"
 
 export default function DashboardPage() {

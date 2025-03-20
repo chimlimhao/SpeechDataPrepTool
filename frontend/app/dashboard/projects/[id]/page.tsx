@@ -16,7 +16,7 @@ import { ChevronLeft, Upload, Search, Grid, List, FileAudio, Play, AlertCircle, 
 import { useToast } from "@/hooks/use-toast"
 import type { Project, AudioFile } from "@/types/database.types"
 import { formatDuration, cn } from "@/lib/utils"
-import { UploadModal, type UploadSettings } from "@/components/upload-modal"
+import { UploadModal, type UploadSettings } from "@/components/dashboard/project-detail/upload-modal"
 import { supabase } from "@/lib/supabase/client"
 import {
   Tooltip,
