@@ -6,16 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FcGoogle } from "react-icons/fc"
-import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
-
+import { Icons } from "@/components/icons"
 export function LoginForm() {
+  const { login, loginWithGoogle, loading, error } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
-  const { login, loginWithGoogle, loading } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,7 +21,8 @@ export function LoginForm() {
       await login({ email, password })
       router.push("/dashboard")
       router.refresh() // Force a refresh to update the session
-    } catch (error) {
+    } catch (err) {
+      console.error("Login failed:", err)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to login",
@@ -48,8 +47,10 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle>Login to Khmer Speech Tool</CardTitle>
-        <CardDescription>Enter your credentials to access your account</CardDescription>
+        <CardTitle>Login</CardTitle>
+        <CardDescription>
+          Enter your email and password to login to your account
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,11 +59,10 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
           <div className="space-y-2">
@@ -70,30 +70,56 @@ export function LoginForm() {
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
             />
           </div>
+          {error && (
+            <div className="text-sm text-red-500">
+              {error.message}
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+            {loading ? (
+              <>
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
           </Button>
         </form>
-        <div className="mt-4 text-center">
-          <Separator className="my-4" />
-          <p className="text-sm text-muted-foreground mb-2">Or continue with</p>
-          <Button 
-            variant="outline" 
-            className="w-full" 
-            onClick={handleGoogleLogin}
-            disabled={loading}
-          >
-            <FcGoogle className="mr-2 h-4 w-4" />
-            Login with Google
-          </Button>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
         </div>
+        <Button
+          variant="outline"
+          type="button"
+          className="w-full"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              Connecting...
+            </>
+          ) : (
+            <>
+              <Icons.google className="mr-2 h-4 w-4" />
+              Google
+            </>
+          )}
+        </Button>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-muted-foreground">

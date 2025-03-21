@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, Settings, LogOut, User } from "lucide-react"
-import { useAuth } from "@/hooks/useAuth"
+import { useAuth } from "@/providers/auth.provider"
 import { useToast } from "@/hooks/use-toast"
 import {
   DropdownMenu,
