@@ -27,20 +27,15 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { Project, ProjectStatus } from "@/types/database.types"
-import { ProjectRepository } from "@/repositories/project.repository"
-
+import { useProject } from "@/providers/project.provider"
 interface DashboardProps {
   onSelectProject: (projectId: string) => void
 }
 
-const projectRepository = new ProjectRepository()
-
 export function Dashboard({ onSelectProject }: DashboardProps) {
-  const [projects, setProjects] = useState<Project[]>([])
+  const { projects, loading, error, createProject, updateProject, deleteProject, getProjectById, getUserProjects } = useProject()
   const [newProject, setNewProject] = useState({ name: "", description: "" })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -49,8 +44,8 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
 
   const loadProjects = async () => {
     try {
-      const projects = await projectRepository.getProjects()
-      setProjects(projects)
+      await getUserProjects()
+
     } catch (error) {
       toast({
         title: "Error",
@@ -58,7 +53,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
         variant: "destructive",
       })
     } finally {
-      setLoading(false)
+
     }
   }
 
@@ -73,12 +68,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
     }
 
     try {
-      const project = await projectRepository.createProject({
-        name: newProject.name,
-        description: newProject.description,
-      })
-
-      setProjects([project, ...projects])
+      const project = await createProject(newProject.name, newProject.description)
       setNewProject({ name: "", description: "" })
       setIsDialogOpen(false)
       
@@ -97,8 +87,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      await projectRepository.deleteProject(projectId)
-      setProjects(projects.filter(p => p.id !== projectId))
+      await deleteProject(projectId)
       toast({
         title: "Success",
         description: "Project deleted successfully",

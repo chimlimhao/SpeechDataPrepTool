@@ -1,14 +1,14 @@
 import { supabase } from '@/lib/supabase/client';
 import type { Project, AudioFile, ProcessingLog, ProjectMember } from '@/types/database.types';
-import { IProjectRepository, CreateProjectDTO, UpdateProjectDTO, CreateAudioFileDTO, CreateTranscriptionDTO } from '@/repositories/project.repository';
+import { IProjectRepository} from '@/repositories/project.repository';
 
 export class SupabaseProjectRepositoryImpl implements IProjectRepository {
-  async createProject(data: CreateProjectDTO): Promise<Project> {
+  async createProject(name: String, description?: String): Promise<Project> {
     const { data: project, error } = await supabase
       .from('projects')
       .insert({
-        name: data.name,
-        description: data.description,
+        name: name,
+        description: description,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
       .select()
@@ -18,10 +18,13 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return project;
   }
 
-  async updateProject(id: string, data: UpdateProjectDTO): Promise<Project> {
+  async updateProject(id: string, name?: String, description?: String): Promise<Project> {
     const { data: project, error } = await supabase
       .from('projects')
-      .update(data)
+      .update({
+        name: name,
+        description: description,
+      })
       .eq('id', id)
       .select()
       .single();
@@ -39,7 +42,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     if (error) throw error;
   }
 
-  async getProject(id: string): Promise<Project> {
+  async getProjectById(id: string): Promise<Project> {
     const { data: project, error } = await supabase
       .from('projects')
       .select()
@@ -60,11 +63,14 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return projects;
   }
 
-  async addAudioFile(data: CreateAudioFileDTO): Promise<AudioFile> {
+  async addAudioFile(projectId: string, fileName: String, filePath: String, duration?: number): Promise<AudioFile> {
     const { data: audioFile, error } = await supabase
       .from('audio_files')
       .insert({
-        ...data,
+        project_id: projectId,
+        file_name: fileName,
+        file_path: filePath,
+        duration: duration,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
       .select()
@@ -85,11 +91,14 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return audioFiles;
   }
 
-  async addTranscription(data: CreateTranscriptionDTO): Promise<ProcessingLog> {
+  async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<ProcessingLog> {
     const { data: transcription, error } = await supabase
       .from('transcriptions')
       .insert({
-        ...data,
+        audio_file_id: audioFileId,
+        content: content,
+        language: language,
+        confidence: confidence,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
       .select()
