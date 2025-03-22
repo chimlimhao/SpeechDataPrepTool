@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { cn } from "@/lib/utils"
 import { AuthProvider } from "@/providers/auth.provider"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ProjectProvider } from "@/providers/project.provider"
+
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <ProjectProvider>
+            <ProjectProvider >
               {children}
             </ProjectProvider>
           </AuthProvider>

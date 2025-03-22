@@ -63,21 +63,35 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return projects;
   }
 
-  async addAudioFile(projectId: string, fileName: String, filePath: String, duration?: number): Promise<AudioFile> {
-    const { data: audioFile, error } = await supabase
+  async addAudioFile(projectId: string, file: File, duration?: number): Promise<AudioFile> {
+    // 1. Upload file to storage
+    const fileExt = file.name.split('.').pop()
+    const filePath = `${projectId}/${Date.now()}-${file.name}`
+    
+    const { error: uploadError } = await supabase.storage
+      .from('audio-files')
+      .upload(filePath, file)
+
+    if (uploadError) throw uploadError
+
+    // 2. Create database record
+    const { data: audioFile, error: dbError } = await supabase
       .from('audio_files')
       .insert({
         project_id: projectId,
-        file_name: fileName,
-        file_path: filePath,
+        file_name: file.name,
+        file_path_raw: filePath,
+        file_size: file.size,
+        format: fileExt,
         duration: duration,
+        transcription_status: 'pending',
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return audioFile;
+    if (dbError) throw dbError
+    return audioFile
   }
 
   async getProjectAudioFiles(projectId: string): Promise<AudioFile[]> {
@@ -139,5 +153,87 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
 
     if (error) throw error;
     return members;
+  }
+
+  subscribeToProjectChanges(projectId: string, onUpdate: (project: Project) => void): () => void {
+    const subscription = supabase
+      .channel('project_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'projects',
+        filter: `id=eq.${projectId}`,
+      }, (payload) => {
+        if (payload.new) {
+          onUpdate(payload.new as Project)
+        }
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }
+
+  subscribeToAudioFileChanges(
+    projectId: string,
+    callbacks: {
+      onInsert?: (file: AudioFile) => void
+      onDelete?: (fileId: string) => void
+      onUpdate?: (file: AudioFile) => void
+    }
+  ): () => void {
+    const subscription = supabase
+      .channel('audio_files_changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'audio_files',
+        filter: `project_id=eq.${projectId}`,
+      }, (payload) => {
+        if (payload.new && callbacks.onInsert) {
+          callbacks.onInsert(payload.new as AudioFile)
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'audio_files',
+        filter: `project_id=eq.${projectId}`,
+      }, (payload) => {
+        if (payload.old && callbacks.onDelete) {
+          callbacks.onDelete(payload.old.id)
+        }
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'audio_files',
+        filter: `project_id=eq.${projectId}`,
+      }, (payload) => {
+        if (payload.new && callbacks.onUpdate) {
+          callbacks.onUpdate(payload.new as AudioFile)
+        }
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }
+
+  async triggerProjectProcessing(projectId: string): Promise<void> {
+    const response = await fetch(`/api/project/process`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ projectId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to trigger project processing');
+    }
   }
 } 
