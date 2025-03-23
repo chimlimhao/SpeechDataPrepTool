@@ -54,9 +54,11 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   async getProjects(): Promise<Project[]> {
+    const user = await supabase.auth.getUser();
     const { data: projects, error } = await supabase
       .from('projects')
       .select()
+      .eq('created_by', user.data.user?.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -223,17 +225,24 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   async triggerProjectProcessing(projectId: string): Promise<void> {
-    const response = await fetch(`/api/project/process`, {
+    // Get the current user's session
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.access_token) {
+      throw new Error('No authentication token available');
+    }
+
+    const response = await fetch(`http://localhost:8080/project/process/${projectId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ projectId }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to trigger project processing');
+      throw new Error(error.detail || 'Failed to trigger project processing');
     }
   }
 } 
