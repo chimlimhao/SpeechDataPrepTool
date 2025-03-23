@@ -9,6 +9,10 @@ import { AudioFileList } from "@/components/dashboard/project-detail/audio-file-
 import { ProjectHeader } from "@/components/dashboard/project-detail/project-header"
 import { useProjectActions } from "@/hooks/use-project-actions"
 import { useProject } from "@/providers/project.provider"
+import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { X } from "lucide-react"
+import { AudioFileDetails } from "@/components/dashboard/project-detail/audio-file-details"
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
   const { getProjectById, getProjectAudioFiles, subscribeToProjectChanges, subscribeToAudioFileChanges } = useProject()
@@ -19,6 +23,8 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   const [project, setProject] = useState<Project | null>(null)
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedFile, setSelectedFile] = useState<AudioFile | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const loadProjectData = useCallback(async () => {
     try {
@@ -87,6 +93,25 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     }
   };
 
+  const toggleExpansion = (expand: boolean, file?: AudioFile | null) => {
+    setIsExpanded(expand);
+    setSelectedFile(file || null);
+  };
+
+  const handleFileSelect = (file: AudioFile | null) => {
+    if (file) {
+      // If a file is selected, expand the panel
+      toggleExpansion(true, file);
+    } else {
+      // If no file is selected, collapse the panel
+      toggleExpansion(false, null);
+    }
+  };
+
+  const handleClosePanel = () => {
+    toggleExpansion(false, null);
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>
   }
@@ -99,21 +124,69 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     <div className="flex flex-col min-h-screen">
       <ProjectHeader 
         project={project}
+        audioFiles={audioFiles}
         onProcessAll={() => handleProcessAll(audioFiles, params.id)}
         onUpload={() => setIsUploadModalOpen(true)}
       />
 
-      <div className="p-6 border-b">
-        <DatasetStats project={project} />
-      </div>
+      <div className="flex-1 overflow-hidden">
+        <div className="flex h-full border-l">
+          <motion.div 
+            className="flex flex-col w-full"
+            animate={{ 
+              width: isExpanded ? "70%" : "100%",
+              transition: { duration: 0.3, ease: "easeInOut" }
+            }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="p-6 border-b">
+              <DatasetStats project={project} />
+            </div>
 
-      <div className="flex-1 p-6">
-        <AudioFileList 
-          files={audioFiles}
-          onProcessFile={handleProcessFile}
-          onViewModeChange={setViewMode}
-          viewMode={viewMode}
-        />
+            <div className="flex-1 p-6 overflow-auto">
+              <AudioFileList 
+                files={audioFiles}
+                onProcessFile={handleProcessFile}
+                onViewModeChange={setViewMode}
+                viewMode={viewMode}
+                selectedFile={selectedFile}
+                onSelectFile={handleFileSelect}
+                isExpanded={isExpanded}
+              />
+            </div>
+          </motion.div>
+
+          <AnimatePresence>
+            {isExpanded && selectedFile && (
+              <motion.div
+                className="border-l h-full overflow-hidden"
+                initial={{ width: 0 }}
+                animate={{ width: "30%" }}
+                exit={{ width: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                <div className="h-full relative">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-4 right-4 z-10"
+                    onClick={handleClosePanel}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <AudioFileDetails 
+                    fileName={selectedFile.file_name} 
+                    projectName={project?.name || ''}
+                    fileSize={selectedFile.file_size}
+                    sampleRate={selectedFile.sample_rate || 44.1}
+                    status={selectedFile.transcription_status}
+                    transcription={selectedFile.transcription_content || ''}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <UploadModal
