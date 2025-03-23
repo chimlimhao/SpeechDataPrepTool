@@ -14,6 +14,7 @@ interface ProjectContextType {
   getUserProjects: () => Promise<Project[]>;
   addAudioFile: (projectId: string, file: File, duration?: number) => Promise<AudioFile>;
   getProjectAudioFiles: (projectId: string) => Promise<AudioFile[]>;
+  getAudioFileContent: (fileId: string) => Promise<string>;
   triggerProjectProcessing: (projectId: string) => Promise<void>;
   subscribeToProjectChanges: (projectId: string, onUpdate: (project: Project) => void) => () => void;
   subscribeToAudioFileChanges: (
@@ -148,6 +149,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const getAudioFileContent = useCallback(async (fileId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      return await projectRepository.getAudioFileContent(fileId);
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const triggerProjectProcessing = useCallback(async (projectId: string) => {
     try {
       setLoading(true);
@@ -187,6 +201,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     getUserProjects,
     addAudioFile,
     getProjectAudioFiles,
+    getAudioFileContent,
     triggerProjectProcessing,
     subscribeToProjectChanges,
     subscribeToAudioFileChanges,

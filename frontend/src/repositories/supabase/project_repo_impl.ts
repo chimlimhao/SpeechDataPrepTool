@@ -107,6 +107,28 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return audioFiles;
   }
 
+  async getAudioFileContent(fileId: string): Promise<string> {
+    // 1. Get the file details to retrieve the path
+    const { data: audioFile, error: fileError } = await supabase
+      .from('audio_files')
+      .select('file_path_raw')
+      .eq('id', fileId)
+      .single();
+
+    if (fileError) throw fileError;
+    if (!audioFile || !audioFile.file_path_raw) throw new Error('File not found');
+    
+    // 2. Generate a signed URL for the file
+    const { data, error: urlError } = await supabase.storage
+      .from('audio-files')
+      .createSignedUrl(audioFile.file_path_raw, 3600); // URL valid for 1 hour
+    
+    if (urlError) throw urlError;
+    if (!data || !data.signedUrl) throw new Error('Failed to generate URL for audio file');
+    
+    return data.signedUrl;
+  }
+
   async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<ProcessingLog> {
     const { data: transcription, error } = await supabase
       .from('transcriptions')

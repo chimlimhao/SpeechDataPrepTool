@@ -8,6 +8,7 @@ export interface IProjectRepository {
   getProjects(): Promise<Project[]>
   addAudioFile(projectId: string, file: File, duration?: number): Promise<AudioFile>
   getProjectAudioFiles(projectId: string): Promise<AudioFile[]>
+  getAudioFileContent(fileId: string): Promise<string>
   addTranscription(audioFileId: string, content: string, language?: string, confidence?: number): Promise<ProcessingLog>
   getAudioFileTranscriptions(audioFileId: string): Promise<ProcessingLog[]>
   addProjectMember(projectId: string, userId: string, role: string): Promise<void>

@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { PlayCircle, PauseCircle } from "lucide-react"
+import { PlayCircle, PauseCircle, Loader2 } from "lucide-react"
 import { cn, formatFileSize } from "@/lib/utils"
+import { useProject } from "@/providers/project.provider"
+import { useToast } from "@/hooks/use-toast"
 
 interface AudioFileDetailsProps {
+  fileId: string
   fileName: string
   projectName?: string
   fileSize?: number
@@ -19,6 +22,7 @@ interface AudioFileDetailsProps {
 }
 
 export function AudioFileDetails({ 
+  fileId,
   fileName, 
   projectName,
   fileSize = 0,
@@ -26,12 +30,37 @@ export function AudioFileDetails({
   status = 'pending',
   transcription = ''
 }: AudioFileDetailsProps) {
+  const { getAudioFileContent } = useProject()
+  const { toast } = useToast()
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [transcriptionText, setTranscriptionText] = useState(transcription)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const audioRef = useRef<HTMLAudioElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const fetchAudioContent = async () => {
+      try {
+        setIsLoading(true)
+        const url = await getAudioFileContent(fileId)
+        setAudioUrl(url)
+      } catch (error) {
+        console.error('Error fetching audio file:', error)
+        toast({
+          title: "Error loading audio",
+          description: "Could not load the audio file",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchAudioContent()
+  }, [fileId, getAudioFileContent, toast])
 
   useEffect(() => {
     if (audioRef.current) {
@@ -42,7 +71,7 @@ export function AudioFileDetails({
         setCurrentTime(audioRef.current!.currentTime)
       })
     }
-  }, [])
+  }, [audioUrl])
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -63,20 +92,27 @@ export function AudioFileDetails({
   }
 
   return (
-    <div className="flex flex-col h-full ">
+    <div className="flex flex-col h-full">
       <div className="p-4 border-b">
         <h2 className="font-medium truncate">{fileName}</h2>
         {projectName && <p className="text-sm text-muted-foreground">Project: {projectName}</p>}
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-6">
-        <div className="bg-accent rounded-md overflow-hidden">
-          <canvas ref={canvasRef} width="300" height="80" />
+        <div className="bg-accent rounded-md overflow-hidden flex items-center justify-center min-h-[80px]">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading audio...</span>
+            </div>
+          ) : (
+            <canvas ref={canvasRef} width="300" height="80" />
+          )}
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" onClick={togglePlayPause}>
+            <Button variant="ghost" size="icon" onClick={togglePlayPause} disabled={isLoading || !audioUrl}>
               {isPlaying ? <PauseCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />}
             </Button>
             <Slider
@@ -85,6 +121,7 @@ export function AudioFileDetails({
               step={0.1}
               onValueChange={handleSliderChange}
               className="flex-1"
+              disabled={isLoading || !audioUrl}
             />
           </div>
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -137,12 +174,12 @@ export function AudioFileDetails({
           </div>
         </div>
       </div>
+
       <div className="p-4 border-t">
         <Button className="w-full">Save Changes</Button>
       </div>
 
-
-      <audio ref={audioRef} src={`/api/audio/${fileName}`} />
+      {audioUrl && <audio ref={audioRef} src={audioUrl} />}
     </div>
   )
 }
