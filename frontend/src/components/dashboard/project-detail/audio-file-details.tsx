@@ -63,15 +63,51 @@ export function AudioFileDetails({
   }, [fileId, getAudioFileContent, toast])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.addEventListener("loadedmetadata", () => {
-        setDuration(audioRef.current!.duration)
-      })
-      audioRef.current.addEventListener("timeupdate", () => {
-        setCurrentTime(audioRef.current!.currentTime)
-      })
+    if (audioRef.current && audioUrl) {
+      const handleLoadedMetadata = () => {
+        if (audioRef.current) {
+          setDuration(audioRef.current.duration);
+        }
+      };
+      
+      const handleTimeUpdate = () => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+        }
+      };
+      
+      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
+      
+      // Clean up event listeners
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
+          audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
     }
-  }, [audioUrl])
+  }, [audioUrl]);
+
+  // Update transcriptionText state when the prop changes (when switching files)
+  useEffect(() => {
+    setTranscriptionText(transcription);
+  }, [transcription, fileId]);
+
+  // Reset player state when changing files
+  useEffect(() => {
+    // Reset play state and time when switching files
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    
+    return () => {
+      // Pause audio when unmounting or changing files
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, [fileId]);
 
   const togglePlayPause = () => {
     if (audioRef.current) {

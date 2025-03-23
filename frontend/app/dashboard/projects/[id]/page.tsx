@@ -109,7 +109,12 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   };
 
   const handleClosePanel = () => {
-    toggleExpansion(false, null);
+    // First set expanded to false to trigger animation
+    setIsExpanded(false);
+    // Then after animation completes, reset the selected file
+    setTimeout(() => {
+      setSelectedFile(null);
+    }, 300); // Matching the transition duration
   };
 
   if (loading) {
@@ -130,11 +135,11 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       />
 
       <div className="flex-1 overflow-hidden">
-        <div className="flex h-full border-l">
+        <div className="flex h-full">
           <motion.div 
             className="flex flex-col w-full"
             animate={{ 
-              width: isExpanded ? "70%" : "100%",
+              width: isExpanded ? "60%" : "100%",
               transition: { duration: 0.3, ease: "easeInOut" }
             }}
             transition={{ duration: 0.3 }}
@@ -161,7 +166,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               <motion.div
                 className="border-l h-full overflow-hidden"
                 initial={{ width: 0 }}
-                animate={{ width: "30%" }}
+                animate={{ width: "40%" }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >
@@ -175,6 +180,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                     <X className="h-4 w-4" />
                   </Button>
                   <AudioFileDetails 
+                    fileId={selectedFile.id}
                     fileName={selectedFile.file_name} 
                     projectName={project?.name || ''}
                     fileSize={selectedFile.file_size}
