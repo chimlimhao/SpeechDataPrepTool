@@ -2,10 +2,12 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase/client"
 import type { AudioFile } from "@/types/database.types"
 import { useProject } from "@/providers/project.provider"
+import { useState } from "react"
 
 export function useProjectActions() {
   const { toast } = useToast()
   const { triggerProjectProcessing } = useProject()
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const handleProcessFile = async (fileId: string) => {
     try {
@@ -60,7 +62,28 @@ export function useProjectActions() {
       return
     }
 
+    if (isProcessing) {
+      toast({
+        title: "Processing in Progress",
+        description: "Please wait for the current processing to complete",
+      })
+      return
+    }
+
     try {
+      setIsProcessing(true)
+      
+      // Update all pending files status to processing
+      // await Promise.all(
+      //   pendingFiles.map(file =>
+      //     supabase
+      //       .from('audio_files')
+      //       .update({ transcription_status: 'processing' })
+      //       .eq('id', file.id)
+      //   )
+      // )
+
+      // Trigger backend processing
       await triggerProjectProcessing(projectId)
       
       toast({
@@ -69,16 +92,30 @@ export function useProjectActions() {
       })
     } catch (error) {
       console.error('Error triggering project processing:', error)
+      
+      // Revert files back to pending status
+      await Promise.all(
+        pendingFiles.map(file =>
+          supabase
+            .from('audio_files')
+            .update({ transcription_status: 'pending' })
+            .eq('id', file.id)
+        )
+      )
+
       toast({
         title: "Error",
-        description: "Failed to start project processing",
+        description: error instanceof Error ? error.message : "Failed to start project processing",
         variant: "destructive",
       })
+    } finally {
+      setIsProcessing(false)
     }
   }
 
   return {
     handleProcessFile,
     handleProcessAll,
+    isProcessing
   }
 } 
