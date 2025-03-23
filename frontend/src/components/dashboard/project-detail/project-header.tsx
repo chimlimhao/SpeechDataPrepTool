@@ -10,15 +10,18 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import type { Project } from "@/types/database.types"
+import type { Project, AudioFile } from "@/types/database.types"
+import { useProjectActions } from "@/hooks/use-project-actions"
 
 interface ProjectHeaderProps {
   project: Project
+  audioFiles: AudioFile[]
   onProcessAll: () => void
   onUpload: () => void
 }
 
-export function ProjectHeader({ project, onProcessAll, onUpload }: ProjectHeaderProps) {
+export function ProjectHeader({ project, audioFiles, onProcessAll, onUpload }: ProjectHeaderProps) {
+  const { handleProcessAll, isProcessing } = useProjectActions()
   return (
     <div className="flex items-center justify-between border-b px-6 py-4">
       <div className="flex flex-col gap-2">
@@ -37,8 +40,9 @@ export function ProjectHeader({ project, onProcessAll, onUpload }: ProjectHeader
       <div className="flex items-center gap-2">
         <Button 
           variant="outline"
-          onClick={onProcessAll}
+          onClick={() => handleProcessAll(audioFiles, project.id)}
           className="gap-2"
+          disabled={isProcessing}
         >
           <PlayCircle className="h-4 w-4" />
           Process All
