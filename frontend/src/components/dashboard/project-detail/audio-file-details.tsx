@@ -10,6 +10,8 @@ import { PlayCircle, PauseCircle, Loader2 } from "lucide-react"
 import { cn, formatFileSize } from "@/lib/utils"
 import { useProject } from "@/providers/project.provider"
 import { useToast } from "@/hooks/use-toast"
+// @ts-ignore - Ignore type issues with WaveSurfer
+import WaveSurfer from 'wavesurfer.js'
 
 interface AudioFileDetailsProps {
   fileId: string
@@ -38,15 +40,22 @@ export function AudioFileDetails({
   const [transcriptionText, setTranscriptionText] = useState(transcription)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isCleanAudio, setIsCleanAudio] = useState(false)
+  const [audioReady, setAudioReady] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const waveformRef = useRef<HTMLDivElement>(null)
+  const wavesurferRef = useRef<WaveSurfer | null>(null)
+  const audioElementRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
     const fetchAudioContent = async () => {
       try {
         setIsLoading(true)
+        setAudioReady(false)
         const url = await getAudioFileContent(fileId)
         setAudioUrl(url)
+        // Determine if we're using the clean audio based on the URL or status
+        setIsCleanAudio(status === 'completed' && url.includes('_cleaned'))
       } catch (error) {
         console.error('Error fetching audio file:', error)
         toast({
@@ -55,39 +64,157 @@ export function AudioFileDetails({
           variant: "destructive",
         })
       } finally {
-        setIsLoading(false)
+        // Don't set isLoading to false here - we'll do that after the audio loads
       }
     }
 
     fetchAudioContent()
-  }, [fileId, getAudioFileContent, toast])
+  }, [fileId, getAudioFileContent, toast, status])
 
+  // Create an audio element to preload the audio content
   useEffect(() => {
-    if (audioRef.current && audioUrl) {
-      const handleLoadedMetadata = () => {
-        if (audioRef.current) {
-          setDuration(audioRef.current.duration);
-        }
-      };
-      
-      const handleTimeUpdate = () => {
-        if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-        }
-      };
-      
-      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
-      audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
-      
-      // Clean up event listeners
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.removeEventListener("loadedmetadata", handleLoadedMetadata);
-          audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
-        }
-      };
+    if (!audioUrl) return;
+    
+    // Clean up any previous audio element
+    if (audioElementRef.current) {
+      audioElementRef.current.remove();
     }
-  }, [audioUrl]);
+    
+    // Create a new audio element to preload the audio
+    const audioElement = new Audio(audioUrl);
+    audioElementRef.current = audioElement;
+    
+    const handleCanPlay = () => {
+      setAudioReady(true);
+      setIsLoading(false);
+      setDuration(audioElement.duration);
+    };
+    
+    const handleError = (error: any) => {
+      console.error('Error loading audio:', error);
+      toast({
+        title: "Error loading audio",
+        description: "Could not load the audio file",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    };
+    
+    audioElement.addEventListener('canplaythrough', handleCanPlay);
+    audioElement.addEventListener('error', handleError);
+    
+    // Start loading the audio
+    audioElement.load();
+    
+    return () => {
+      audioElement.removeEventListener('canplaythrough', handleCanPlay);
+      audioElement.removeEventListener('error', handleError);
+      audioElement.pause();
+      
+      if (audioElementRef.current === audioElement) {
+        audioElementRef.current = null;
+      }
+    };
+  }, [audioUrl, toast]);
+
+  // Initialize WaveSurfer when audio is ready
+  useEffect(() => {
+    if (!audioReady || !audioUrl || !waveformRef.current) return;
+
+    // Clean up previous instance
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+    }
+
+    try {
+      // Create WaveSurfer instance
+      const wavesurfer = WaveSurfer.create({
+        container: waveformRef.current,
+        waveColor: isCleanAudio ? '#4f46e5' : '#64748b',
+        progressColor: isCleanAudio ? '#818cf8' : '#94a3b8',
+        url: audioUrl,
+        height: 80,
+        normalize: true,
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+        // Add media option to use our preloaded audio element
+        media: audioElementRef.current || undefined
+      });
+
+      wavesurferRef.current = wavesurfer;
+
+      // Set up event handlers
+      wavesurfer.on('ready', () => {
+        if (audioRef.current) {
+          setDuration(wavesurfer.getDuration());
+        }
+      });
+
+      wavesurfer.on('timeupdate', () => {
+        setCurrentTime(wavesurfer.getCurrentTime());
+      });
+
+      wavesurfer.on('interaction', () => {
+        setCurrentTime(wavesurfer.getCurrentTime());
+        if (audioRef.current) {
+          audioRef.current.currentTime = wavesurfer.getCurrentTime();
+        }
+      });
+
+      wavesurfer.on('finish', () => {
+        setIsPlaying(false);
+      });
+    } catch (error) {
+      console.error("Error initializing wavesurfer:", error);
+      // We can still let user play audio even if waveform fails
+    }
+
+    // Clean up
+    return () => {
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+        wavesurferRef.current = null;
+      }
+    };
+  }, [audioUrl, audioReady, isCleanAudio]);
+
+  // Sync audio element with wavesurfer
+  useEffect(() => {
+    if (!audioRef.current || !wavesurferRef.current) return;
+
+    const handleTimeUpdate = () => {
+      if (audioRef.current && wavesurferRef.current) {
+        try {
+          const audioTime = audioRef.current.currentTime;
+          const waveTime = wavesurferRef.current.getCurrentTime();
+          
+          // Only update if the difference is significant to avoid loops
+          if (Math.abs(audioTime - waveTime) > 0.1) {
+            wavesurferRef.current.setTime(audioTime);
+          }
+          setCurrentTime(audioTime);
+        } catch (error) {
+          // Ignore errors that might happen during state transitions
+        }
+      }
+    };
+    
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    
+    audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
+    audioRef.current.addEventListener('play', handlePlay);
+    audioRef.current.addEventListener('pause', handlePause);
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
+        audioRef.current.removeEventListener('play', handlePlay);
+        audioRef.current.removeEventListener('pause', handlePause);
+      }
+    };
+  }, [audioUrl, audioReady]);
 
   // Update transcriptionText state when the prop changes (when switching files)
   useEffect(() => {
@@ -110,22 +237,26 @@ export function AudioFileDetails({
   }, [fileId]);
 
   const togglePlayPause = () => {
-    if (audioRef.current) {
+    if (audioRef.current && wavesurferRef.current) {
       if (isPlaying) {
-        audioRef.current.pause()
+        audioRef.current.pause();
+        wavesurferRef.current.pause();
       } else {
-        audioRef.current.play()
+        audioRef.current.play();
+        wavesurferRef.current.play();
       }
-      setIsPlaying(!isPlaying)
+      setIsPlaying(!isPlaying);
     }
-  }
+  };
 
   const handleSliderChange = (value: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = value[0]
-      setCurrentTime(value[0])
+    if (audioRef.current && wavesurferRef.current) {
+      const newTime = value[0];
+      audioRef.current.currentTime = newTime;
+      wavesurferRef.current.setTime(newTime);
+      setCurrentTime(newTime);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -135,14 +266,21 @@ export function AudioFileDetails({
       </div>
 
       <div className="flex-1 overflow-auto p-4 space-y-6">
-        <div className="bg-accent rounded-md overflow-hidden flex items-center justify-center min-h-[80px]">
+        <div className="bg-accent rounded-md overflow-hidden flex items-center justify-center min-h-[80px] relative">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-sm text-muted-foreground">Loading audio...</span>
             </div>
           ) : (
-            <canvas ref={canvasRef} width="300" height="80" />
+            <>
+              <div ref={waveformRef} className="w-full h-full" />
+              {isCleanAudio && (
+                <Badge variant="secondary" className="absolute top-2 right-2">
+                  Noise Reduced
+                </Badge>
+              )}
+            </>
           )}
         </div>
 
