@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,10 @@ interface AudioFileDetailsProps {
   status?: string
   transcription?: string
 }
+
+// Audio blob cache to keep loaded audio data in memory
+// This reduces repeated downloads while navigating between files
+const audioBlobCache = new Map<string, { blob: Blob, url: string, isClean: boolean }>();
 
 export function AudioFileDetails({ 
   fileId,
@@ -46,16 +50,47 @@ export function AudioFileDetails({
   const waveformRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
   const audioElementRef = useRef<HTMLAudioElement | null>(null)
+  
+  // Check if we already have the audio cached
+  const cachedAudio = useMemo(() => audioBlobCache.get(fileId), [fileId]);
 
   useEffect(() => {
     const fetchAudioContent = async () => {
       try {
         setIsLoading(true)
         setAudioReady(false)
+        
+        // Check if we already have this audio cached in memory
+        if (cachedAudio) {
+          console.log(`Using cached audio for file ${fileId}`);
+          setAudioUrl(cachedAudio.url);
+          setIsCleanAudio(cachedAudio.isClean);
+          return;
+        }
+        
+        // Otherwise fetch from the server (which uses SessionStorage cache)
         const url = await getAudioFileContent(fileId)
-        setAudioUrl(url)
-        // Determine if we're using the clean audio based on the URL or status
-        setIsCleanAudio(status === 'completed' && url.includes('_cleaned'))
+        
+        // Download the audio data once and cache it
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        // Store in our memory cache
+        const isClean = status === 'completed' && url.includes('_cleaned');
+        audioBlobCache.set(fileId, {
+          blob,
+          url: blobUrl,
+          isClean
+        });
+        
+        // Update state
+        setAudioUrl(blobUrl);
+        setIsCleanAudio(isClean);
       } catch (error) {
         console.error('Error fetching audio file:', error)
         toast({
@@ -69,7 +104,13 @@ export function AudioFileDetails({
     }
 
     fetchAudioContent()
-  }, [fileId, getAudioFileContent, toast, status])
+    
+    // Cleanup URL when component unmounts
+    return () => {
+      // We don't revoke the URL here because we want to keep it cached
+      // It will be automatically cleaned up when the page refreshes
+    };
+  }, [fileId, getAudioFileContent, toast, status, cachedAudio])
 
   // Create an audio element to preload the audio content
   useEffect(() => {

@@ -15,7 +15,7 @@ import { X } from "lucide-react"
 import { AudioFileDetails } from "@/components/dashboard/project-detail/audio-file-details"
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
-  const { getProjectById, getProjectAudioFiles, subscribeToProjectChanges, subscribeToAudioFileChanges } = useProject()
+  const { getProjectById, getProjectAudioFiles, subscribeToProjectChanges, subscribeToAudioFileChanges, clearAudioCache } = useProject()
   const { handleProcessFile, handleProcessAll } = useProjectActions()
   const { toast } = useToast()
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
@@ -86,6 +86,14 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       unsubscribeFiles()
     }
   }, [params.id, loadProjectData, subscribeToProjectChanges, subscribeToAudioFileChanges])
+
+  // Clean up audio cache when component unmounts
+  useEffect(() => {
+    return () => {
+      // This part only runs when the project page unmounts
+      clearAudioCache();
+    };
+  }, [clearAudioCache]);
 
   const handleFileUploaded = (newFile: AudioFile) => {
     // Update audio files list

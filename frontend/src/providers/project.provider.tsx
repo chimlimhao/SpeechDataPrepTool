@@ -1,9 +1,9 @@
 "use client"
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import type { Project, AudioFile } from "@/types/database.types";
+import { createContext, useContext, useState, useCallback, ReactNode, useMemo, useEffect } from 'react';
+import type { Project, AudioFile, ProcessingLog } from "@/types/database.types";
 import { SupabaseProjectRepositoryImpl } from "@/repositories/supabase/project_repo_impl";
 
-interface ProjectContextType {
+export interface ProjectContextType {
   projects: Project[];
   loading: boolean;
   error: Error | null;
@@ -15,6 +15,7 @@ interface ProjectContextType {
   addAudioFile: (projectId: string, file: File, duration?: number) => Promise<AudioFile>;
   getProjectAudioFiles: (projectId: string) => Promise<AudioFile[]>;
   getAudioFileContent: (fileId: string) => Promise<string>;
+  addTranscription: (audioFileId: string, content: string, language?: string, confidence?: number) => Promise<ProcessingLog>;
   triggerProjectProcessing: (projectId: string) => Promise<void>;
   subscribeToProjectChanges: (projectId: string, onUpdate: (project: Project) => void) => () => void;
   subscribeToAudioFileChanges: (
@@ -25,6 +26,7 @@ interface ProjectContextType {
       onUpdate?: (file: AudioFile) => void
     }
   ) => () => void;
+  clearAudioCache: () => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
@@ -33,8 +35,37 @@ const projectRepository = new SupabaseProjectRepositoryImpl();
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const projectRepository = useMemo(() => new SupabaseProjectRepositoryImpl(), []);
+  
+  // Audio file URL cache
+  const [audioUrlCache, setAudioUrlCache] = useState<Record<string, { url: string, timestamp: number }>>({});
+  
+  // Initialize cache from session storage
+  useEffect(() => {
+    try {
+      const cachedData = sessionStorage.getItem('audioUrlCache');
+      if (cachedData) {
+        const parsedCache = JSON.parse(cachedData);
+        setAudioUrlCache(parsedCache);
+      }
+    } catch (err) {
+      console.error('Error loading audio cache from session storage:', err);
+      // If there's an error, we just start with an empty cache
+    }
+  }, []);
+  
+  // Update session storage when cache changes
+  useEffect(() => {
+    if (Object.keys(audioUrlCache).length > 0) {
+      try {
+        sessionStorage.setItem('audioUrlCache', JSON.stringify(audioUrlCache));
+      } catch (err) {
+        console.error('Error saving audio cache to session storage:', err);
+      }
+    }
+  }, [audioUrlCache]);
 
   const createProject = useCallback(async (name: string, description?: string) => {
     try {
@@ -153,7 +184,40 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      return await projectRepository.getAudioFileContent(fileId);
+      
+      // Check cache first
+      const cachedItem = audioUrlCache[fileId];
+      const now = Date.now();
+      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+      
+      // If we have a cached URL that's not expired, use it
+      if (cachedItem && (now - cachedItem.timestamp) < CACHE_DURATION) {
+        return cachedItem.url;
+      }
+      
+      // Otherwise fetch from repository
+      const url = await projectRepository.getAudioFileContent(fileId);
+      
+      // Update cache with new URL
+      setAudioUrlCache(prev => ({
+        ...prev,
+        [fileId]: { url, timestamp: now }
+      }));
+      
+      return url;
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [projectRepository, audioUrlCache]);
+
+  const addTranscription = useCallback(async (audioFileId: string, content: string, language?: string, confidence?: number) => {
+    try {
+      setLoading(true);
+      setError(null);
+      return await projectRepository.addTranscription(audioFileId, content, language, confidence);
     } catch (err) {
       setError(err as Error);
       throw err;
@@ -190,6 +254,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     return projectRepository.subscribeToAudioFileChanges(projectId, callbacks);
   }, []);
 
+  // Method to manually clear the cache if needed
+  const clearAudioCache = useCallback(() => {
+    setAudioUrlCache({});
+    try {
+      sessionStorage.removeItem('audioUrlCache');
+    } catch (err) {
+      console.error('Error clearing audio cache from session storage:', err);
+    }
+  }, []);
+
   const value: ProjectContextType = {
     projects,
     loading,
@@ -202,9 +276,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     addAudioFile,
     getProjectAudioFiles,
     getAudioFileContent,
+    addTranscription,
     triggerProjectProcessing,
     subscribeToProjectChanges,
     subscribeToAudioFileChanges,
+    clearAudioCache,
   };
 
   return (
