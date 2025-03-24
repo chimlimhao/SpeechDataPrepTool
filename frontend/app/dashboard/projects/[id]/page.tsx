@@ -159,7 +159,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
           <motion.div 
             className="flex flex-col w-full"
             animate={{ 
-              width: isExpanded ? "60%" : "100%",
+              width: isExpanded ? "70%" : "100%",
               transition: { duration: 0.3, ease: "easeInOut" }
             }}
             transition={{ duration: 0.3 }}
@@ -186,7 +186,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
               <motion.div
                 className="border-l h-full overflow-hidden"
                 initial={{ width: 0 }}
-                animate={{ width: "40%" }}
+                animate={{ width: "30%" }}
                 exit={{ width: 0, opacity: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
               >

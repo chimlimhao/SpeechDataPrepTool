@@ -137,32 +137,43 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return data.signedUrl;
   }
 
-  async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<ProcessingLog> {
-    const { data: transcription, error } = await supabase
-      .from('transcriptions')
-      .insert({
-        audio_file_id: audioFileId,
-        content: content,
-        language: language,
-        confidence: confidence,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+  async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<AudioFile> {
+    console.log("Repository: Saving transcription for fileId:", audioFileId);
+    console.log("Repository: Content to save:", content);
+    
+    // Update the audio file transcription directly
+    const { data: audioFile, error } = await supabase
+      .from('audio_files')
+      .update({
+        transcription_status: 'completed',
+        transcription_content: content,
+        updated_at: new Date().toISOString(),
       })
+      .eq('id', audioFileId)
       .select()
+      .single();
+    
+    if (error) {
+      console.error("Repository: Error updating transcription:", error);
+      throw error;
+    }
+    
+    console.log("Repository: Updated audio file:", audioFile);
+    return audioFile;
+  }
+
+  async getAudioFileTranscriptions(audioFileId: string): Promise<any[]> {
+    // Since there's no transcriptions table, we'll return the audio file itself
+    // with its transcription content
+    const { data: audioFile, error } = await supabase
+      .from('audio_files')
+      .select('id, transcription_content, updated_at, created_at')
+      .eq('id', audioFileId)
       .single();
 
     if (error) throw error;
-    return transcription;
-  }
-
-  async getAudioFileTranscriptions(audioFileId: string): Promise<ProcessingLog[]> {
-    const { data: transcriptions, error } = await supabase
-      .from('transcriptions')
-      .select()
-      .eq('audio_file_id', audioFileId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return transcriptions;
+    // Return as an array with one item for compatibility
+    return audioFile ? [audioFile] : [];
   }
 
   async addProjectMember(projectId: string, userId: string, role: string): Promise<void> {

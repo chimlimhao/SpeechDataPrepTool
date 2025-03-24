@@ -36,7 +36,7 @@ export function AudioFileDetails({
   status = 'pending',
   transcription = ''
 }: AudioFileDetailsProps) {
-  const { getAudioFileContent } = useProject()
+  const { getAudioFileContent, addTranscription } = useProject()
   const { toast } = useToast()
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -46,6 +46,7 @@ export function AudioFileDetails({
   const [isLoading, setIsLoading] = useState(true)
   const [isCleanAudio, setIsCleanAudio] = useState(false)
   const [audioReady, setAudioReady] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const waveformRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
@@ -299,6 +300,35 @@ export function AudioFileDetails({
     }
   };
 
+  // Handle save transcription
+  const handleSaveTranscription = async () => {
+    if (!fileId || transcriptionText === transcription) return;
+    
+    console.log("Saving transcription for fileId:", fileId);
+    console.log("New transcription text:", transcriptionText);
+    
+    try {
+      setIsSaving(true);
+      // Update the transcription content directly in the audio_files table
+      const result = await addTranscription(fileId, transcriptionText);
+      console.log("Save result:", result);
+      
+      toast({
+        title: "Success",
+        description: "Transcription saved successfully",
+      });
+    } catch (error) {
+      console.error("Error saving transcription:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save transcription",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
@@ -391,7 +421,20 @@ export function AudioFileDetails({
       </div>
 
       <div className="p-4 border-t">
-        <Button className="w-full">Save Changes</Button>
+        <Button 
+          className="w-full"
+          onClick={handleSaveTranscription}
+          disabled={isSaving || transcriptionText === transcription}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Save Changes'
+          )}
+        </Button>
       </div>
 
       {audioUrl && <audio ref={audioRef} src={audioUrl} />}

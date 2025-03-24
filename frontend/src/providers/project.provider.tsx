@@ -15,7 +15,7 @@ export interface ProjectContextType {
   addAudioFile: (projectId: string, file: File, duration?: number) => Promise<AudioFile>;
   getProjectAudioFiles: (projectId: string) => Promise<AudioFile[]>;
   getAudioFileContent: (fileId: string) => Promise<string>;
-  addTranscription: (audioFileId: string, content: string, language?: string, confidence?: number) => Promise<ProcessingLog>;
+  addTranscription: (audioFileId: string, content: string, language?: string, confidence?: number) => Promise<AudioFile>;
   triggerProjectProcessing: (projectId: string) => Promise<void>;
   subscribeToProjectChanges: (projectId: string, onUpdate: (project: Project) => void) => () => void;
   subscribeToAudioFileChanges: (
@@ -217,14 +217,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      return await projectRepository.addTranscription(audioFileId, content, language, confidence);
+      console.log("Project Provider: Saving transcription for fileId:", audioFileId);
+      const result = await projectRepository.addTranscription(audioFileId, content, language, confidence);
+      console.log("Project Provider: Save result:", result);
+      return result;
     } catch (err) {
+      console.error("Project Provider: Error adding transcription:", err);
       setError(err as Error);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [projectRepository]);
 
   const triggerProjectProcessing = useCallback(async (projectId: string) => {
     try {
