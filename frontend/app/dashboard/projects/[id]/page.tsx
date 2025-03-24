@@ -57,15 +57,27 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
 
     const unsubscribeFiles = subscribeToAudioFileChanges(params.id, {
       onInsert: (newFile) => {
-        setAudioFiles(prev => [newFile, ...prev])
+        setAudioFiles(prev => {
+          // Check if file already exists to prevent duplicates
+          if (prev.some(file => file.id === newFile.id)) {
+            return prev;
+          }
+          return [newFile, ...prev];
+        });
       },
       onDelete: (fileId) => {
         setAudioFiles(prev => prev.filter(file => file.id !== fileId))
       },
       onUpdate: (updatedFile) => {
-        setAudioFiles(prev => prev.map(file => 
-          file.id === updatedFile.id ? updatedFile : file
-        ))
+        setAudioFiles(prev => {
+          // Check if the file exists before updating
+          if (!prev.some(file => file.id === updatedFile.id)) {
+            return prev;
+          }
+          return prev.map(file => 
+            file.id === updatedFile.id ? updatedFile : file
+          );
+        });
       }
     })
 
