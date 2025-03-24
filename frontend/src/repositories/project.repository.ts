@@ -14,6 +14,7 @@ export interface IProjectRepository {
   addProjectMember(projectId: string, userId: string, role: string): Promise<void>
   getProjectMembers(projectId: string): Promise<ProjectMember[]>
   triggerProjectProcessing(projectId: string): Promise<void>
+  exportProjectDataset(projectId: string, includeProcessed?: boolean): Promise<Blob>
   subscribeToProjectChanges(projectId: string, onUpdate: (project: Project) => void): () => void
   subscribeToAudioFileChanges(
     projectId: string, 

@@ -17,6 +17,7 @@ export interface ProjectContextType {
   getAudioFileContent: (fileId: string) => Promise<string>;
   addTranscription: (audioFileId: string, content: string, language?: string, confidence?: number) => Promise<AudioFile>;
   triggerProjectProcessing: (projectId: string) => Promise<void>;
+  exportProjectDataset: (projectId: string, includeProcessed?: boolean) => Promise<Blob>;
   subscribeToProjectChanges: (projectId: string, onUpdate: (project: Project) => void) => () => void;
   subscribeToAudioFileChanges: (
     projectId: string,
@@ -243,6 +244,19 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const exportProjectDataset = useCallback(async (projectId: string, includeProcessed: boolean = true) => {
+    try {
+      setLoading(true);
+      setError(null);
+      return await projectRepository.exportProjectDataset(projectId, includeProcessed);
+    } catch (err) {
+      setError(err as Error);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [projectRepository]);
+
   const subscribeToProjectChanges = useCallback((projectId: string, onUpdate: (project: Project) => void) => {
     return projectRepository.subscribeToProjectChanges(projectId, onUpdate);
   }, []);
@@ -282,6 +296,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     getAudioFileContent,
     addTranscription,
     triggerProjectProcessing,
+    exportProjectDataset,
     subscribeToProjectChanges,
     subscribeToAudioFileChanges,
     clearAudioCache,

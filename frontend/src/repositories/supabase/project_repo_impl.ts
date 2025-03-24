@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { Project, AudioFile, ProcessingLog, ProjectMember } from '@/types/database.types';
 import { IProjectRepository} from '@/repositories/project.repository';
+import JSZip from 'jszip';
 
 export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   async createProject(name: String, description?: String): Promise<Project> {
@@ -284,6 +285,95 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.detail || 'Failed to trigger project processing');
+    }
+  }
+
+  async exportProjectDataset(projectId: string, includeProcessed: boolean = true): Promise<Blob> {
+    try {
+      // 1. Get project info
+      const project = await this.getProjectById(projectId);
+      const projectName = project.name.replace(/\s+/g, '_').toLowerCase();
+      
+      // 2. Get all audio files for the project
+      const audioFiles = await this.getProjectAudioFiles(projectId);
+      
+      // 3. Filter audio files based on includeProcessed option
+      const filesToExport = includeProcessed 
+        ? audioFiles.filter(file => file.transcription_status === 'completed')
+        : audioFiles;
+      
+      if (filesToExport.length === 0) {
+        throw new Error('No files to export. Ensure files have completed transcriptions.');
+      }
+      
+      // 4. Create a new JSZip instance
+      const zip = new JSZip();
+      
+      // 5. Create the main folder with the project name
+      const mainFolder = zip.folder(projectName);
+      if (!mainFolder) throw new Error('Failed to create main folder in zip');
+      
+      // 6. Create the wav folder for audio files
+      const wavFolder = mainFolder.folder('wav');
+      if (!wavFolder) throw new Error('Failed to create wav folder in zip');
+      
+      // 7. Create the line_index.tsv content
+      let lineIndexContent = 'filename\ttranscription\n';
+      
+      // 8. Process each audio file
+      const filePromises = filesToExport.map(async (file) => {
+        try {
+          // Get the audio file content
+          const audioUrl = await this.getAudioFileContent(file.id);
+          
+          // Download the file
+          const response = await fetch(audioUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to download file: ${file.file_name}`);
+          }
+          
+          // Get the file extension
+          const fileExt = file.file_name.split('.').pop() || 'wav';
+          
+          // Create a standardized filename (removing any problematic characters)
+          const safeFileName = `${file.id}.${fileExt}`;
+          
+          // Add the audio file to the wav folder
+          const blob = await response.blob();
+          wavFolder.file(safeFileName, blob);
+          
+          // Return the line for the index file if this file has transcription
+          if (file.transcription_content) {
+            return `${safeFileName}\t${file.transcription_content.trim()}\n`;
+          }
+          return '';
+        } catch (error) {
+          console.error(`Error processing file ${file.file_name}:`, error);
+          // Return empty string for failed files
+          return '';
+        }
+      });
+      
+      // Wait for all files to be processed and collect the line_index entries
+      const lineIndexEntries = await Promise.all(filePromises);
+      
+      // Add all entries to the line_index.tsv content
+      lineIndexContent += lineIndexEntries.filter(entry => entry !== '').join('');
+      
+      // Add the line_index.tsv file to the main folder
+      mainFolder.file('line_index.tsv', lineIndexContent);
+      
+      // Generate the zip file
+      const zipBlob = await zip.generateAsync({ 
+        type: 'blob',
+        compression: 'DEFLATE',
+        compressionOptions: { level: 6 }
+      });
+      
+      return zipBlob;
+    } catch (error) {
+      console.error('Error exporting project dataset:', error);
+      throw error;
     }
   }
 } 
