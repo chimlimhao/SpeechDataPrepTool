@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import type { Project, AudioFile } from "@/types/database.types"
 import { useProjectActions } from "@/hooks/use-project-actions"
+import { ExportDatasetButton } from "./export-dataset-button"
 
 interface ProjectHeaderProps {
   project: Project
@@ -22,6 +23,8 @@ interface ProjectHeaderProps {
 
 export function ProjectHeader({ project, audioFiles, onProcessAll, onUpload }: ProjectHeaderProps) {
   const { handleProcessAll, isProcessing } = useProjectActions()
+  const hasCompletedFiles = audioFiles.some(file => file.transcription_status === 'completed')
+  
   return (
     <div className="flex items-center justify-between border-b px-6 py-4">
       <div className="flex flex-col gap-2">
@@ -38,6 +41,11 @@ export function ProjectHeader({ project, audioFiles, onProcessAll, onUpload }: P
         </Breadcrumb>
       </div>
       <div className="flex items-center gap-2">
+        <ExportDatasetButton 
+          projectId={project.id} 
+          projectName={project.name}
+          disabled={audioFiles.length === 0}
+        />
         <Button 
           variant="outline"
           onClick={() => handleProcessAll(audioFiles, project.id)}
