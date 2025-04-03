@@ -18,21 +18,15 @@ interface AudioFileDetailsProps {
   fileName: string
   projectName?: string
   fileSize?: number
-  sampleRate?: number
   status?: string
   transcription?: string
 }
-
-// Audio blob cache to keep loaded audio data in memory
-// This reduces repeated downloads while navigating between files
-const audioBlobCache = new Map<string, { blob: Blob, url: string, isClean: boolean }>();
 
 export function AudioFileDetails({ 
   fileId,
   fileName, 
   projectName,
   fileSize = 0,
-  sampleRate = 44.1,
   status = 'pending',
   transcription = ''
 }: AudioFileDetailsProps) {
@@ -45,187 +39,223 @@ export function AudioFileDetails({
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCleanAudio, setIsCleanAudio] = useState(false)
-  const [audioReady, setAudioReady] = useState(false)
+  const [waveformReady, setWaveformReady] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const waveformRef = useRef<HTMLDivElement>(null)
   const wavesurferRef = useRef<WaveSurfer | null>(null)
   const audioElementRef = useRef<HTMLAudioElement | null>(null)
+  const isComponentMounted = useRef(true)
   
-  // Check if we already have the audio cached
-  const cachedAudio = useMemo(() => audioBlobCache.get(fileId), [fileId]);
+  // Cleanup function for WaveSurfer
+  const cleanupWaveSurfer = () => {
+    if (wavesurferRef.current) {
+      try {
+        wavesurferRef.current.destroy()
+      } catch (error) {
+        console.error('Error destroying wavesurfer:', error)
+      }
+      wavesurferRef.current = null
+    }
+    setWaveformReady(false)
+  }
+  
+  // Cleanup function for audio element
+  const cleanupAudio = () => {
+    if (audioElementRef.current) {
+      try {
+        audioElementRef.current.pause()
+        audioElementRef.current.src = ''
+        audioElementRef.current.load()
+      } catch (error) {
+        console.error('Error cleaning up audio element:', error)
+      }
+      audioElementRef.current = null
+    }
+    
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause()
+        audioRef.current.src = ''
+        audioRef.current.load()
+      } catch (error) {
+        console.error('Error cleaning up audio ref:', error)
+      }
+    }
+    
+    setIsPlaying(false)
+    setCurrentTime(0)
+    setDuration(0)
+  }
+  
+  // Complete cleanup
+  const cleanup = () => {
+    cleanupWaveSurfer()
+    cleanupAudio()
+  }
 
+  // Component mount/unmount effect
   useEffect(() => {
+    isComponentMounted.current = true
+    
+    return () => {
+      isComponentMounted.current = false
+      cleanup()
+    }
+  }, [])
+
+  // Fetch audio content when fileId changes
+  useEffect(() => {
+    let isMounted = true
+    const controller = new AbortController()
+    
     const fetchAudioContent = async () => {
+      // Clean up before fetching new audio
+      cleanup()
+      
+      if (!isMounted) return
+      
       try {
         setIsLoading(true)
-        setAudioReady(false)
+        setAudioUrl(null)
         
-        // Check if we already have this audio cached in memory
-        if (cachedAudio) {
-          console.log(`Using cached audio for file ${fileId}`);
-          setAudioUrl(cachedAudio.url);
-          setIsCleanAudio(cachedAudio.isClean);
-          return;
+        // Get the signed URL from the server
+        const url = await getAudioFileContent(fileId, status === 'completed')
+        
+        if (!isMounted) return
+        
+        // Create a new audio element
+        const audio = new Audio()
+        
+        // Set up event listeners before setting the source
+        const canPlayHandler = () => {
+          if (!isMounted) return
+          setDuration(audio.duration)
+          setIsLoading(false)
+          
+          // Only set the audioUrl after we know the audio can play
+          setAudioUrl(url)
+          setIsCleanAudio(status === 'completed')
         }
         
-        // Otherwise fetch from the server (which uses SessionStorage cache)
-        const url = await getAudioFileContent(fileId)
-        
-        // Download the audio data once and cache it
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch audio: ${response.status} ${response.statusText}`);
+        const errorHandler = (error: Event) => {
+          if (!isMounted) return
+          console.error('Error loading audio:', error)
+          setIsLoading(false)
+          toast({
+            title: "Error loading audio",
+            description: "Could not load the audio file",
+            variant: "destructive",
+          })
         }
         
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
+        // Add event listeners
+        audio.addEventListener('canplaythrough', canPlayHandler)
+        audio.addEventListener('error', errorHandler)
         
-        // Store in our memory cache
-        const isClean = status === 'completed' && url.includes('_cleaned');
-        audioBlobCache.set(fileId, {
-          blob,
-          url: blobUrl,
-          isClean
-        });
-        
-        // Update state
-        setAudioUrl(blobUrl);
-        setIsCleanAudio(isClean);
+        // Set the audio source and start loading
+        audio.src = url
+        audioElementRef.current = audio
       } catch (error) {
+        if (!isMounted) return
         console.error('Error fetching audio file:', error)
+        setIsLoading(false)
         toast({
           title: "Error loading audio",
           description: "Could not load the audio file",
           variant: "destructive",
         })
-      } finally {
-        // Don't set isLoading to false here - we'll do that after the audio loads
       }
     }
 
     fetchAudioContent()
     
-    // Cleanup URL when component unmounts
     return () => {
-      // We don't revoke the URL here because we want to keep it cached
-      // It will be automatically cleaned up when the page refreshes
-    };
-  }, [fileId, getAudioFileContent, toast, status, cachedAudio])
-
-  // Create an audio element to preload the audio content
-  useEffect(() => {
-    if (!audioUrl) return;
-    
-    // Clean up any previous audio element
-    if (audioElementRef.current) {
-      audioElementRef.current.remove();
+      isMounted = false
+      controller.abort()
+      cleanup()
     }
+  }, [fileId, getAudioFileContent, status, toast])
+
+  // Initialize WaveSurfer only when audio is ready
+  useEffect(() => {
+    if (!isComponentMounted.current || !audioUrl || !waveformRef.current || !audioElementRef.current) return
     
-    // Create a new audio element to preload the audio
-    const audioElement = new Audio(audioUrl);
-    audioElementRef.current = audioElement;
+    // Clean up any existing WaveSurfer instance
+    cleanupWaveSurfer()
     
-    const handleCanPlay = () => {
-      setAudioReady(true);
-      setIsLoading(false);
-      setDuration(audioElement.duration);
-    };
+    let isMounted = true
+    let wavesurfer: WaveSurfer | null = null
     
-    const handleError = (error: any) => {
-      console.error('Error loading audio:', error);
-      toast({
-        title: "Error loading audio",
-        description: "Could not load the audio file",
-        variant: "destructive",
-      });
-      setIsLoading(false);
-    };
-    
-    audioElement.addEventListener('canplaythrough', handleCanPlay);
-    audioElement.addEventListener('error', handleError);
-    
-    // Start loading the audio
-    audioElement.load();
-    
-    return () => {
-      audioElement.removeEventListener('canplaythrough', handleCanPlay);
-      audioElement.removeEventListener('error', handleError);
-      audioElement.pause();
+    // Small delay to ensure DOM is ready
+    const initTimeout = setTimeout(() => {
+      if (!isMounted) return
       
-      if (audioElementRef.current === audioElement) {
-        audioElementRef.current = null;
+      try {
+        wavesurfer = WaveSurfer.create({
+          container: waveformRef.current!,
+          waveColor: isCleanAudio ? '#4f46e5' : '#64748b',
+          progressColor: isCleanAudio ? '#818cf8' : '#94a3b8',
+          height: 80,
+          normalize: true,
+          barWidth: 2,
+          barGap: 1,
+          barRadius: 2,
+          media: audioElementRef.current!
+        })
+        
+        wavesurfer.once('ready', () => {
+          if (!isMounted) return
+          setWaveformReady(true)
+          setDuration(wavesurfer?.getDuration() || 0)
+        })
+        
+        wavesurfer.on('timeupdate', () => {
+          if (!isMounted) return
+          setCurrentTime(wavesurfer?.getCurrentTime() || 0)
+        })
+        
+        wavesurfer.on('finish', () => {
+          if (!isMounted) return
+          setIsPlaying(false)
+        })
+        
+        wavesurfer.on('error', (error) => {
+          console.error('WaveSurfer error:', error)
+        })
+        
+        wavesurferRef.current = wavesurfer
+      } catch (error) {
+        console.error("Error initializing wavesurfer:", error)
+        if (wavesurfer) {
+          try {
+            wavesurfer.destroy()
+          } catch (destroyError) {
+            console.error("Error destroying wavesurfer after init error:", destroyError)
+          }
+        }
       }
-    };
-  }, [audioUrl, toast]);
-
-  // Initialize WaveSurfer when audio is ready
-  useEffect(() => {
-    if (!audioReady || !audioUrl || !waveformRef.current) return;
-
-    // Clean up previous instance
-    if (wavesurferRef.current) {
-      wavesurferRef.current.destroy();
-    }
-
-    try {
-      // Create WaveSurfer instance
-      const wavesurfer = WaveSurfer.create({
-        container: waveformRef.current,
-        waveColor: isCleanAudio ? '#4f46e5' : '#64748b',
-        progressColor: isCleanAudio ? '#818cf8' : '#94a3b8',
-        url: audioUrl,
-        height: 80,
-        normalize: true,
-        barWidth: 2,
-        barGap: 1,
-        barRadius: 2,
-        // Add media option to use our preloaded audio element
-        media: audioElementRef.current || undefined
-      });
-
-      wavesurferRef.current = wavesurfer;
-
-      // Set up event handlers
-      wavesurfer.on('ready', () => {
-        if (audioRef.current) {
-          setDuration(wavesurfer.getDuration());
-        }
-      });
-
-      wavesurfer.on('timeupdate', () => {
-        setCurrentTime(wavesurfer.getCurrentTime());
-      });
-
-      wavesurfer.on('interaction', () => {
-        setCurrentTime(wavesurfer.getCurrentTime());
-        if (audioRef.current) {
-          audioRef.current.currentTime = wavesurfer.getCurrentTime();
-        }
-      });
-
-      wavesurfer.on('finish', () => {
-        setIsPlaying(false);
-      });
-    } catch (error) {
-      console.error("Error initializing wavesurfer:", error);
-      // We can still let user play audio even if waveform fails
-    }
-
-    // Clean up
+    }, 100)
+    
     return () => {
-      if (wavesurferRef.current) {
-        wavesurferRef.current.destroy();
-        wavesurferRef.current = null;
+      isMounted = false
+      clearTimeout(initTimeout)
+      if (wavesurfer) {
+        try {
+          wavesurfer.destroy()
+        } catch (error) {
+          console.error("Error destroying wavesurfer in cleanup:", error)
+        }
       }
-    };
-  }, [audioUrl, audioReady, isCleanAudio]);
+    }
+  }, [audioUrl, isCleanAudio])
 
   // Sync audio element with wavesurfer
   useEffect(() => {
-    if (!audioRef.current || !wavesurferRef.current) return;
-
+    if (!audioRef.current || !wavesurferRef.current || !waveformReady) return;
+    
     const handleTimeUpdate = () => {
+      if (!isComponentMounted.current) return;
       if (audioRef.current && wavesurferRef.current) {
         try {
           const audioTime = audioRef.current.currentTime;
@@ -256,7 +286,7 @@ export function AudioFileDetails({
         audioRef.current.removeEventListener('pause', handlePause);
       }
     };
-  }, [audioUrl, audioReady]);
+  }, [audioUrl, waveformReady]);
 
   // Update transcriptionText state when the prop changes (when switching files)
   useEffect(() => {
@@ -279,24 +309,40 @@ export function AudioFileDetails({
   }, [fileId]);
 
   const togglePlayPause = () => {
-    if (audioRef.current && wavesurferRef.current) {
+    if (!audioRef.current || !wavesurferRef.current || !waveformReady) return;
+    
+    try {
       if (isPlaying) {
         audioRef.current.pause();
         wavesurferRef.current.pause();
       } else {
-        audioRef.current.play();
-        wavesurferRef.current.play();
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              wavesurferRef.current?.play();
+            })
+            .catch(error => {
+              console.error("Error playing audio:", error);
+            });
+        }
       }
       setIsPlaying(!isPlaying);
+    } catch (error) {
+      console.error("Error toggling play/pause:", error);
     }
   };
 
   const handleSliderChange = (value: number[]) => {
-    if (audioRef.current && wavesurferRef.current) {
+    if (!audioRef.current || !wavesurferRef.current || !waveformReady) return;
+    
+    try {
       const newTime = value[0];
       audioRef.current.currentTime = newTime;
       wavesurferRef.current.setTime(newTime);
       setCurrentTime(newTime);
+    } catch (error) {
+      console.error("Error changing time:", error);
     }
   };
 
@@ -400,10 +446,6 @@ export function AudioFileDetails({
               <p className="font-medium">{formatFileSize(fileSize)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Sample Rate</p>
-              <p className="font-medium">{sampleRate} kHz</p>
-            </div>
-            <div>
               <p className="text-muted-foreground">Status</p>
               <Badge variant="outline" className={cn(
                 {
@@ -437,7 +479,7 @@ export function AudioFileDetails({
         </Button>
       </div>
 
-      {audioUrl && <audio ref={audioRef} src={audioUrl} />}
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
     </div>
   )
 }
