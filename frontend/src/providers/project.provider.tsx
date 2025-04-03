@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useMemo, useEffect } from 'react';
 import type { Project, AudioFile, ProcessingLog } from "@/types/database.types";
 import { SupabaseProjectRepositoryImpl } from "@/repositories/supabase/project_repo_impl";
+import { supabase } from "@/lib/supabase/client";
 
 export interface ProjectContextType {
   projects: Project[];
@@ -14,7 +15,7 @@ export interface ProjectContextType {
   getUserProjects: () => Promise<Project[]>;
   addAudioFile: (projectId: string, file: File, duration?: number) => Promise<AudioFile>;
   getProjectAudioFiles: (projectId: string) => Promise<AudioFile[]>;
-  getAudioFileContent: (fileId: string) => Promise<string>;
+  getAudioFileContent: (fileId: string, useCleanedVersion: boolean) => Promise<string>;
   addTranscription: (audioFileId: string, content: string, language?: string, confidence?: number) => Promise<AudioFile>;
   triggerProjectProcessing: (projectId: string) => Promise<void>;
   exportProjectDataset: (projectId: string, includeProcessed?: boolean) => Promise<Blob>;
@@ -181,38 +182,28 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const getAudioFileContent = useCallback(async (fileId: string) => {
+  const getAudioFileContent = useCallback(async (fileId: string, useCleanedVersion: boolean = false) => {
     try {
-      setLoading(true);
-      setError(null);
-      
-      // Check cache first
-      const cachedItem = audioUrlCache[fileId];
-      const now = Date.now();
-      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
-      
-      // If we have a cached URL that's not expired, use it
-      if (cachedItem && (now - cachedItem.timestamp) < CACHE_DURATION) {
-        return cachedItem.url;
+      // Check session storage first
+      const cacheKey = `audio_${fileId}_${useCleanedVersion ? 'clean' : 'raw'}`;
+      const cachedUrl = sessionStorage.getItem(cacheKey);
+      if (cachedUrl) {
+        console.log('Using cached audio URL from session storage');
+        return cachedUrl;
       }
-      
-      // Otherwise fetch from repository
-      const url = await projectRepository.getAudioFileContent(fileId);
-      
-      // Update cache with new URL
-      setAudioUrlCache(prev => ({
-        ...prev,
-        [fileId]: { url, timestamp: now }
-      }));
-      
-      return url;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    } finally {
-      setLoading(false);
+
+      // Get URL from repository
+      const signedUrl = await projectRepository.getAudioFileContent(fileId, useCleanedVersion);
+
+      // Cache the URL in session storage
+      sessionStorage.setItem(cacheKey, signedUrl);
+
+      return signedUrl;
+    } catch (error) {
+      console.error('Provider: Error getting audio file content:', error);
+      throw error;
     }
-  }, [projectRepository, audioUrlCache]);
+  }, [projectRepository]);
 
   const addTranscription = useCallback(async (audioFileId: string, content: string, language?: string, confidence?: number) => {
     try {

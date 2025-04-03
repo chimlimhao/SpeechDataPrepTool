@@ -108,34 +108,37 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return audioFiles;
   }
 
-  async getAudioFileContent(fileId: string): Promise<string> {
-    // 1. Get the file details to retrieve the path and status
-    const { data: audioFile, error: fileError } = await supabase
-      .from('audio_files')
-      .select('file_path_raw, file_path_cleaned, transcription_status')
-      .eq('id', fileId)
-      .single();
+  async getAudioFileContent(fileId: string, useCleanedVersion: boolean = false): Promise<string> {
+    try {
+      // First get the file metadata from the database
+      const { data: fileData, error: fileError } = await supabase
+        .from('audio_files')
+        .select('file_path_raw, file_path_cleaned')
+        .eq('id', fileId)
+        .single();
 
-    if (fileError) throw fileError;
-    if (!audioFile || !audioFile.file_path_raw) throw new Error('File not found');
-    
-    // 2. Determine which path to use - cleaned or raw
-    // Use cleaned path if available and status is completed, otherwise use raw
-    const useCleanedPath = 
-      audioFile.file_path_cleaned && 
-      audioFile.transcription_status === 'completed';
-    
-    const filePath = useCleanedPath ? audioFile.file_path_cleaned : audioFile.file_path_raw;
-    
-    // 3. Generate a signed URL for the file
-    const { data, error: urlError } = await supabase.storage
-      .from('audio-files')
-      .createSignedUrl(filePath, 3600); // URL valid for 1 hour
-    
-    if (urlError) throw urlError;
-    if (!data || !data.signedUrl) throw new Error('Failed to generate URL for audio file');
-    
-    return data.signedUrl;
+      if (fileError) throw fileError;
+      if (!fileData) throw new Error('File not found');
+
+      // Determine which path to use
+      const filePath = useCleanedVersion && fileData.file_path_cleaned 
+        ? fileData.file_path_cleaned 
+        : fileData.file_path_raw;
+
+      // Get the signed URL for the file
+      const { data, error: signedUrlError } = await supabase
+        .storage
+        .from('audio-files')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry
+
+      if (signedUrlError) throw signedUrlError;
+      if (!data?.signedUrl) throw new Error('Could not generate signed URL');
+
+      return data.signedUrl;
+    } catch (error) {
+      console.error('Repository: Error getting audio file content:', error);
+      throw error;
+    }
   }
 
   async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<AudioFile> {
@@ -323,8 +326,8 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
       // 8. Process each audio file
       const filePromises = filesToExport.map(async (file) => {
         try {
-          // Get the audio file content
-          const audioUrl = await this.getAudioFileContent(file.id);
+          // Get the audio file content - explicitly use raw version
+          const audioUrl = await this.getAudioFileContent(file.id, false);
           
           // Download the file
           const response = await fetch(audioUrl);
