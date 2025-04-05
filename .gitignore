@@ -48,10 +48,19 @@ frontend/coverage/
 frontend/.turbo/
 
 # Backend (ignored for now)
-backend/
+# backend/
+backend/.env
+backend/venv/
+backend/test/
+backend/service/test_service.py
+backend-copy/
 
 # Machine Learning (ignored for now)
-machine-learning/
+# machine-learning/
+machine-learning/venv/
+machine-learning/asr_service/wav2vec2-vitouphy/model/
+machine-learning/asr_service/whisper-kaksoky/model/
+machine-learning-copy/
 
 # Docker
 docker-compose.override.yml

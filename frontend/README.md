@@ -1,36 +1,146 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend Service Setup Guide
 
-## Getting Started
+This is the frontend service for the Speech Data Preparation Tool, providing a user interface for managing speech data projects and audio file processing.
 
-First, run the development server:
+## Prerequisites
+
+- Node.js 16 or higher
+- npm or yarn
+- Supabase account and project
+- Backend service running (see backend/README.md)
+
+## Setup Instructions
+
+1. **Install Dependencies**
+```bash
+npm install
+# or
+yarn install
+```
+
+2. **Environment Configuration**
+Create a `.env.local` file in the frontend directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+```
+
+## Project Structure
+```
+frontend/
+├── components/     # React components
+├── pages/         # Next.js pages
+├── public/        # Static assets
+├── styles/        # CSS styles
+├── utils/         # Utility functions
+└── package.json
+```
+
+## Available Scripts
 
 ```bash
+# Development mode
 npm run dev
 # or
 yarn dev
+
+# Build for production
+npm run build
 # or
-pnpm dev
+yarn build
+
+# Start production server
+npm start
 # or
-bun dev
+yarn start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Project Management**
+  - Create and manage speech data projects
+  - Upload audio files
+  - Monitor processing status
+  - Export processed data
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Audio Processing**
+  - Preview audio files
+  - Test noise reduction
+  - View transcriptions
+  - Export datasets
 
-## Learn More
+- **User Management**
+  - Authentication with Supabase
 
-To learn more about Next.js, take a look at the following resources:
+## Development Guidelines
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Component Structure**
+   - Use functional components with hooks
+   - Follow atomic design principles
+   - Implement proper prop validation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **State Management**
+   - Use React Query for server state
+   - Context API for global state
+   - Local state for component-specific data
 
-## Deploy on Vercel
+3. **Styling**
+   - Tailwind CSS for styling
+   - Follow responsive design principles
+   - Maintain consistent theming
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Description | Required |
+|----------|-------------|----------|
+| NEXT_PUBLIC_SUPABASE_URL | Supabase project URL | Yes |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabase anonymous key | Yes |
+| NEXT_PUBLIC_BACKEND_URL | Backend service URL | Yes |
+
+## Deployment
+
+1. **Build the Application**
+```bash
+npm run build
+# or
+yarn build
+```
+
+2. **Start the Production Server**
+```bash
+npm start
+# or
+yarn start
+```
+
+## Troubleshooting
+
+1. **Build Issues**
+   - Clear `.next` directory
+   - Remove node_modules and reinstall
+   - Check Node.js version
+
+2. **API Connection Issues**
+   - Verify environment variables
+   - Check CORS configuration
+   - Ensure backend and machine-learning service is running
+
+3. **Authentication Problems**
+   - Check Supabase configuration
+   - Clear local storage
+   - Verify JWT tokens
+
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+
+## Contributing
+
+1. Follow the existing code style
+2. Write meaningful commit messages
+3. Test your changes thoroughly
+4. Update documentation as needed
