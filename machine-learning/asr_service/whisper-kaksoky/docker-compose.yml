@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  whisper-asr-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: whisper-asr-service:latest
+    container_name: whisper-asr-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./model:/app/model
+    restart: unless-stopped
+    networks:
+      - whisper-asr-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+networks:
+  whisper-asr-network:
+    driver: bridge 
