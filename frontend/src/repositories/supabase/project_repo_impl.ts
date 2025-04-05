@@ -320,6 +320,9 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
       const wavFolder = mainFolder.folder('wav');
       if (!wavFolder) throw new Error('Failed to create wav folder in zip');
       
+      // Track used filenames to handle duplicates
+      const usedNames = new Set<string>();
+      
       // 7. Create the line_index.tsv content
       let lineIndexContent = 'filename\ttranscription\n';
       
@@ -335,19 +338,31 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
             throw new Error(`Failed to download file: ${file.file_name}`);
           }
           
-          // Get the file extension
-          const fileExt = file.file_name.split('.').pop() || 'wav';
+          // Generate a safe filename
+          let safeFileName = file.file_name
+            .replace(/[^\w\s.-]/g, '') // Remove special characters except dots, hyphens
+            .replace(/\s+/g, '_');     // Replace spaces with underscores
           
-          // Create a standardized filename (removing any problematic characters)
-          const safeFileName = `${file.id}.${fileExt}`;
+          // Handle duplicates by appending numbers
+          let uniqueFileName = safeFileName;
+          let counter = 1;
+          while (usedNames.has(uniqueFileName.toLowerCase())) {
+            const ext = safeFileName.split('.').pop() || 'wav';
+            const baseName = safeFileName.slice(0, -(ext.length + 1));
+            uniqueFileName = `${baseName}_${counter}.${ext}`;
+            counter++;
+          }
+          
+          // Add to used names set
+          usedNames.add(uniqueFileName.toLowerCase());
           
           // Add the audio file to the wav folder
           const blob = await response.blob();
-          wavFolder.file(safeFileName, blob);
+          wavFolder.file(uniqueFileName, blob);
           
           // Return the line for the index file if this file has transcription
           if (file.transcription_content) {
-            return `${safeFileName}\t${file.transcription_content.trim()}\n`;
+            return `${uniqueFileName}\t${file.transcription_content.trim()}\n`;
           }
           return '';
         } catch (error) {
