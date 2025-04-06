@@ -12,7 +12,7 @@ A comprehensive tool for preparing and managing Khmer speech datasets, featuring
 
 ## Tech Stack
 
-### Frontend (70% Complete)
+### Frontend
 - Next.js 13 with App Router
 - TypeScript
 - Tailwind CSS
@@ -20,10 +20,9 @@ A comprehensive tool for preparing and managing Khmer speech datasets, featuring
 - Chart.js for statistics
 - React Icons
 
-### Backend (0% Complete)
-- FastAPI (Planned)
-- SQLAlchemy
-- PostgreSQL
+### Backend
+- FastAPI
+- PostgreSQL + Supabase
 - JWT Authentication
 - Audio Processing Libraries
 
@@ -36,50 +35,25 @@ npm install
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000`
+The frontend will be available at `http://localhost:3001`
 
-### Backend Setup (Coming Soon)
+### Backend Setup 
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python main.py
+uvicorn main:app --reload --port 8080
 ```
 
-## Missing Components
-
-### Frontend (30% Remaining)
-1. Audio file upload and processing implementation
-2. Real-time audio waveform visualization
-3. Audio transcription interface
-4. User settings and profile management
-5. Error handling and loading states
-6. Unit tests and integration tests
-
-### Backend (100% Remaining)
-1. Database schema and models
-2. User authentication and authorization
-3. File upload and storage system
-4. Audio processing pipeline
-5. API endpoints for:
-   - User management
-   - Project management
-   - File management
-   - Transcription management
-6. WebSocket for real-time updates
-7. Error handling and logging
-8. Unit tests and integration tests
-9. Documentation (API docs, Swagger)
-10. Deployment configuration
-
-### DevOps/Infrastructure
-1. Docker configuration
-2. CI/CD pipeline
-3. Production deployment setup
-4. Monitoring and logging
-5. Backup strategy
-
+### Machine Learning
+```bash
+cd machine-learning/asr_service/wav2vec2
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app:app --reload
+```
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting pull requests.
