@@ -60,4 +60,4 @@ Contributions are welcome! Please read our contributing guidelines before submit
 
 ## License
 
-[Add your chosen license] 
+[MIT] 
