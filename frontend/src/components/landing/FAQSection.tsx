@@ -61,7 +61,7 @@ export function FAQSection() {
           
           <div className="mt-10 text-center">
             <p className="mb-4 text-muted-foreground">Still have questions?</p>
-            <Button className="bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">
+            <Button className="px-4 py-2 md:px-6 md:py-3 bg-teal-500 text-white hover:bg-teal-600 shadow-[0_0_20px_rgba(20,184,166,0.3)]">
               Contact Support
             </Button>
           </div>
