@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { UploadIcon, FolderUp, Pencil } from "lucide-react"
+import { UploadIcon, FolderUp } from "lucide-react"
 import type { AudioFile } from "@/types/database.types"
 import { IndividualUpload } from "./upload/individual-upload"
 import { FolderUpload } from "./upload/folder-upload"

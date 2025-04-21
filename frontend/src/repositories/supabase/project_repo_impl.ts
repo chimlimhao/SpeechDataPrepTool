@@ -1,5 +1,4 @@
-import { supabase } from '@/lib/supabase/client';
-import type { Project, AudioFile, ProcessingLog, ProjectMember } from '@/types/database.types';
+import type { Project, AudioFile, ProjectMember } from '@/types/database.types';
 import { IProjectRepository} from '@/repositories/project.repository';
 import JSZip from 'jszip';
 import { SupabaseClient } from '@supabase/supabase-js';

@@ -2,12 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
-import { Icons } from "@/components/icons"
 import Link from "next/link"
 import { Sparkles } from "lucide-react"
 import AuthProviderButton from "./AuthProviderButton"

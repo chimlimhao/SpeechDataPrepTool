@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Search, Grid, List, Play, AlertCircle, X, Maximize2, Minimize2 } from "lucide-react"
+import { Search, Play, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn, formatDuration, formatFileSize } from "@/lib/utils"
 import type { AudioFile } from "@/types/database.types"

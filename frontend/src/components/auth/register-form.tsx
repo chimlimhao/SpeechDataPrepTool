@@ -2,12 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/providers/auth.provider"
 import { toast } from "@/hooks/use-toast"
-import { Icons } from "@/components/icons"
 import Link from "next/link"
 import { Sparkles } from "lucide-react"
 import AuthProviderButton from "./AuthProviderButton"
@@ -18,21 +14,21 @@ export function RegisterForm() {
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await login({ email, password })
-      router.push("/dashboard")
-      router.refresh() // Force a refresh to update the session
-    } catch (err) {
-      console.error("Login failed:", err)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to login",
-        variant: "destructive",
-      })
-    }
-  }
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   try {
+  //     await login({ email, password })
+  //     router.push("/dashboard")
+  //     router.refresh() // Force a refresh to update the session
+  //   } catch (err) {
+  //     console.error("Login failed:", err)
+  //     toast({
+  //       title: "Error",
+  //       description: error instanceof Error ? error.message : "Failed to login",
+  //       variant: "destructive",
+  //     })
+  //   }
+  // }
 
   return (
     <div className="flex min-h-screen justify-center items-center bg-background">

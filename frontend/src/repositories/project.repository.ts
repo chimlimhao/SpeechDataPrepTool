@@ -1,4 +1,4 @@
-import type { Project, AudioFile, ProcessingLog, ProjectMember } from '@/types/database.types'
+import type { Project, AudioFile, ProjectMember } from '@/types/database.types'
 
 export interface IProjectRepository {
   createProject(name: string, description?: string): Promise<Project>
