@@ -10,29 +10,33 @@ import { Footer } from "./Footer"
 
 export function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
+  const [mounted, setMounted] = useState(false)
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
-    // Set initial dimensions
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight
-    })
-
-    const handleScroll = () => setScrollY(window.scrollY)
-    const handleResize = () => {
+    setMounted(true)
+    if (typeof window !== 'undefined') {
+      // Set initial dimensions
       setDimensions({
         width: window.innerWidth,
         height: window.innerHeight
       })
-    }
 
-    window.addEventListener("scroll", handleScroll)
-    window.addEventListener("resize", handleResize)
-    
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-      window.removeEventListener("resize", handleResize)
+      const handleScroll = () => setScrollY(window.scrollY)
+      const handleResize = () => {
+        setDimensions({
+          width: window.innerWidth,
+          height: window.innerHeight
+        })
+      }
+
+      window.addEventListener("scroll", handleScroll)
+      window.addEventListener("resize", handleResize)
+      
+      return () => {
+        window.removeEventListener("scroll", handleScroll)
+        window.removeEventListener("resize", handleResize)
+      }
     }
   }, [])
 
@@ -63,7 +67,7 @@ export function LandingPage() {
 
       <Footer />
 
-      {dimensions.width > 0 && (
+      {mounted && dimensions.width > 0 && (
         <div
           className="fixed inset-0 pointer-events-none"
           style={{
