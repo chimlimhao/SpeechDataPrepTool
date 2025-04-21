@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NEXT_PUBLIC_SITE_URL=http://localhost:3000 next dev",
     "build": "next build --no-lint",
     "start": "next start",
     "lint": "next lint"

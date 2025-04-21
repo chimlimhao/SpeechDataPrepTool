@@ -26,10 +26,22 @@ export class SupabaseAuthRepositoryImpl implements IAuthRepository {
 
   async loginWithGoogle(): Promise<AuthResponse> {
     try {
+      // Get domain dynamically - use Vercel URL in production or local URL in development
+      let redirectDomain = typeof window !== 'undefined' ? window.location.origin : '';
+      
+      // If we're on Vercel, use the actual deployment URL
+      if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+        redirectDomain = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+      } else if (process.env.NEXT_PUBLIC_SITE_URL) {
+        redirectDomain = process.env.NEXT_PUBLIC_SITE_URL;
+      }
+      
+      console.log('Using redirect domain:', redirectDomain);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          redirectTo: `${redirectDomain}/auth/callback?next=/dashboard`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
