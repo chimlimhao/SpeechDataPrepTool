@@ -10,11 +10,30 @@ import { Footer } from "./Footer"
 
 export function LandingPage() {
   const [scrollY, setScrollY] = useState(0)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
+    // Set initial dimensions
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
+
     const handleScroll = () => setScrollY(window.scrollY)
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+    }
+
     window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    window.addEventListener("resize", handleResize)
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   return (
@@ -44,12 +63,14 @@ export function LandingPage() {
 
       <Footer />
 
-      <div
-        className="fixed inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(circle at ${scrollY % window.innerWidth}px ${scrollY % window.innerHeight}px, rgba(147, 51, 234, 0.05) 0%, transparent 15%)`,
-        }}
-      />
+      {dimensions.width > 0 && (
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background: `radial-gradient(circle at ${scrollY % dimensions.width}px ${scrollY % dimensions.height}px, rgba(147, 51, 234, 0.05) 0%, transparent 15%)`,
+          }}
+        />
+      )}
     </div>
   )
 }
