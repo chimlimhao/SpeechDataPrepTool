@@ -63,9 +63,9 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex h-screen flex-col border-r bg-muted/10">
+    <div className="flex h-screen flex-col border-r bg-muted/10 bg-secondary ">
       <div className="p-6">
-        <h2 className="text-lg font-semibold">Somleng</h2>
+        <h2 className="text-lg font-semibold text-teal-500 border-transparent border-b-black hover:cursor-pointer">Somleng</h2>
       </div>
       <nav className="flex-1 space-y-2 p-4">
         {navigation.map((item) => {
@@ -75,7 +75,7 @@ export function Sidebar() {
               <Button
                 variant={isActive ? "secondary" : "ghost"}
                 className={cn("w-full justify-start gap-2", {
-                  "bg-secondary": isActive,
+                  "bg-teal-500 text-white hover:bg-teal-600": isActive,
                 })}
               >
                 <item.icon className="h-4 w-4" />
@@ -111,13 +111,13 @@ export function Sidebar() {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <Link href="/dashboard/settings">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="hover:cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
             </Link>
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-500 focus:text-red-500 focus:bg-red-50 hover:cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4 text-red-500" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
