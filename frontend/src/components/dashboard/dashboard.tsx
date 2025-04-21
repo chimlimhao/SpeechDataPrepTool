@@ -29,6 +29,8 @@ import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useProject } from "@/providers/project.provider"
 import { Separator } from "@/components/ui/separator"
+import { useRouter } from "next/navigation"
+
 interface DashboardProps {
   onSelectProject: (projectId: string) => void
 }
@@ -38,6 +40,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
   const [newProject, setNewProject] = useState({ name: "", description: "" })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     loadProjects()
@@ -53,8 +56,6 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
         description: "Failed to load projects",
         variant: "destructive",
       })
-    } finally {
-
     }
   }
 
@@ -100,6 +101,11 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
         variant: "destructive",
       })
     }
+  }
+
+  const handleProjectClick = (projectId: string) => {
+    // Navigate to project detail page
+    router.push(`/dashboard/projects/${projectId}`)
   }
 
   if (loading) {
@@ -183,7 +189,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
               <Card
                 key={project.id}
                 className="cursor-pointer transition-colors hover:bg-accent/50 border border-teal-500"
-                onClick={() => onSelectProject(project.id)}
+                onClick={() => handleProjectClick(project.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">{project.name}</CardTitle>

@@ -46,6 +46,9 @@ export function CallToAction({
           <p className="mt-4 text-lg leading-8 text-gray-600">
             {description}
           </p>
+          <p className="text-lg text-muted-foreground">
+            Start transcribing your Khmer audio files today. No credit card required.
+          </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Button className="bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">
               <Link href={ctaLink}>

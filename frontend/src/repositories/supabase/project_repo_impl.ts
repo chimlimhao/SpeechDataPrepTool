@@ -2,61 +2,61 @@ import { supabase } from '@/lib/supabase/client';
 import type { Project, AudioFile, ProcessingLog, ProjectMember } from '@/types/database.types';
 import { IProjectRepository} from '@/repositories/project.repository';
 import JSZip from 'jszip';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export class SupabaseProjectRepositoryImpl implements IProjectRepository {
-  async createProject(name: String, description?: String): Promise<Project> {
-    const { data: project, error } = await supabase
-      .from('projects')
-      .insert({
-        name: name,
-        description: description,
-        created_by: (await supabase.auth.getUser()).data.user?.id,
-      })
-      .select()
-      .single();
+  private supabase: SupabaseClient
 
-    if (error) throw error;
-    return project;
+  constructor(supabase: SupabaseClient) {
+    this.supabase = supabase
   }
 
-  async updateProject(id: string, name?: String, description?: String): Promise<Project> {
-    const { data: project, error } = await supabase
+  async createProject(name: string, description: string): Promise<Project> {
+    const { data, error } = await this.supabase
       .from('projects')
-      .update({
-        name: name,
-        description: description,
-      })
+      .insert([{ name, description }])
+      .select()
+      .single()
+
+    if (error) throw error
+    return data
+  }
+
+  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+    const { data, error } = await this.supabase
+      .from('projects')
+      .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .single()
 
-    if (error) throw error;
-    return project;
+    if (error) throw error
+    return data
   }
 
   async deleteProject(id: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.supabase
       .from('projects')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
 
-    if (error) throw error;
+    if (error) throw error
   }
 
-  async getProjectById(id: string): Promise<Project> {
-    const { data: project, error } = await supabase
+  async getProjectById(id: string): Promise<Project | null> {
+    const { data, error } = await this.supabase
       .from('projects')
-      .select()
+      .select('*')
       .eq('id', id)
-      .single();
+      .single()
 
-    if (error) throw error;
-    return project;
+    if (error) throw error
+    return data
   }
 
   async getProjects(): Promise<Project[]> {
-    const user = await supabase.auth.getUser();
-    const { data: projects, error } = await supabase
+    const user = await this.supabase.auth.getUser();
+    const { data: projects, error } = await this.supabase
       .from('projects')
       .select()
       .eq('created_by', user.data.user?.id)
@@ -71,14 +71,14 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     const fileExt = file.name.split('.').pop()
     const filePath = `${projectId}/${Date.now()}-${file.name}`
     
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await this.supabase.storage
       .from('audio-files')
       .upload(filePath, file)
 
     if (uploadError) throw uploadError
 
     // 2. Create database record
-    const { data: audioFile, error: dbError } = await supabase
+    const { data: audioFile, error: dbError } = await this.supabase
       .from('audio_files')
       .insert({
         project_id: projectId,
@@ -88,7 +88,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
         format: fileExt,
         duration: duration,
         transcription_status: 'pending',
-        created_by: (await supabase.auth.getUser()).data.user?.id,
+        created_by: (await this.supabase.auth.getUser()).data.user?.id,
       })
       .select()
       .single()
@@ -98,7 +98,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   async getProjectAudioFiles(projectId: string): Promise<AudioFile[]> {
-    const { data: audioFiles, error } = await supabase
+    const { data: audioFiles, error } = await this.supabase
       .from('audio_files')
       .select()
       .eq('project_id', projectId)
@@ -111,7 +111,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   async getAudioFileContent(fileId: string, useCleanedVersion: boolean = false): Promise<string> {
     try {
       // First get the file metadata from the database
-      const { data: fileData, error: fileError } = await supabase
+      const { data: fileData, error: fileError } = await this.supabase
         .from('audio_files')
         .select('file_path_raw, file_path_cleaned')
         .eq('id', fileId)
@@ -126,7 +126,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
         : fileData.file_path_raw;
 
       // Get the signed URL for the file
-      const { data, error: signedUrlError } = await supabase
+      const { data, error: signedUrlError } = await this.supabase
         .storage
         .from('audio-files')
         .createSignedUrl(filePath, 3600); // 1 hour expiry
@@ -146,7 +146,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     console.log("Repository: Content to save:", content);
     
     // Update the audio file transcription directly
-    const { data: audioFile, error } = await supabase
+    const { data: audioFile, error } = await this.supabase
       .from('audio_files')
       .update({
         transcription_status: 'completed',
@@ -169,7 +169,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   async getAudioFileTranscriptions(audioFileId: string): Promise<any[]> {
     // Since there's no transcriptions table, we'll return the audio file itself
     // with its transcription content
-    const { data: audioFile, error } = await supabase
+    const { data: audioFile, error } = await this.supabase
       .from('audio_files')
       .select('id, transcription_content, updated_at, created_at')
       .eq('id', audioFileId)
@@ -181,7 +181,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   async addProjectMember(projectId: string, userId: string, role: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await this.supabase
       .from('project_members')
       .insert({
         project_id: projectId,
@@ -193,7 +193,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   async getProjectMembers(projectId: string): Promise<ProjectMember[]> {
-    const { data: members, error } = await supabase
+    const { data: members, error } = await this.supabase
       .from('project_members')
       .select()
       .eq('project_id', projectId);
@@ -203,7 +203,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
   }
 
   subscribeToProjectChanges(projectId: string, onUpdate: (project: Project) => void): () => void {
-    const subscription = supabase
+    const subscription = this.supabase
       .channel('project_changes')
       .on('postgres_changes', {
         event: '*',
@@ -230,7 +230,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
       onUpdate?: (file: AudioFile) => void
     }
   ): () => void {
-    const subscription = supabase
+    const subscription = this.supabase
       .channel('audio_files_changes')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -271,7 +271,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
 
   async triggerProjectProcessing(projectId: string): Promise<void> {
     // Get the current user's session
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await this.supabase.auth.getSession();
     
     if (!session?.access_token) {
       throw new Error('No authentication token available');
