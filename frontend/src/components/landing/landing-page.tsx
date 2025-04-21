@@ -15,28 +15,27 @@ export function LandingPage() {
 
   useEffect(() => {
     setMounted(true)
-    if (typeof window !== 'undefined') {
-      // Set initial dimensions
+    
+    // Set initial dimensions
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
+
+    const handleScroll = () => setScrollY(window.scrollY)
+    const handleResize = () => {
       setDimensions({
         width: window.innerWidth,
         height: window.innerHeight
       })
+    }
 
-      const handleScroll = () => setScrollY(window.scrollY)
-      const handleResize = () => {
-        setDimensions({
-          width: window.innerWidth,
-          height: window.innerHeight
-        })
-      }
-
-      window.addEventListener("scroll", handleScroll)
-      window.addEventListener("resize", handleResize)
-      
-      return () => {
-        window.removeEventListener("scroll", handleScroll)
-        window.removeEventListener("resize", handleResize)
-      }
+    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("resize", handleResize)
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", handleResize)
     }
   }, [])
 
@@ -49,7 +48,6 @@ export function LandingPage() {
       <NavBar />
       
       <main className="container mx-auto px-4">
-        {/* First Hero Section */}
         <HeroSection 
           title="Unlock the Power of Khmer Speech!"
           description="Transcribe, analyze, and enhance Khmer audio with cutting-edge AI technology. Focus on what matters - connecting with users."
@@ -58,10 +56,8 @@ export function LandingPage() {
           ctaLink="/login"
         />
 
-        {/* Features Section */}
         <FeaturesSection />
         
-        {/* FAQ Section */}
         <FAQSection />
       </main>
 

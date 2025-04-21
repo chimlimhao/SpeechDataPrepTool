@@ -1,9 +1,4 @@
-import dynamic from 'next/dynamic'
-
-const LandingPage = dynamic(
-  () => import('@/components/landing/landing-page').then((mod) => mod.LandingPage),
-  { ssr: false }
-)
+import { LandingPage } from "@/components/landing/landing-page"
 
 export default function Home() {
   return <LandingPage />
