@@ -5,94 +5,130 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { FcGoogle } from "react-icons/fc"
-import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/providers/auth.provider"
+import { toast } from "@/hooks/use-toast"
+import { Icons } from "@/components/icons"
+import Link from "next/link"
+import { Sparkles } from "lucide-react"
+import AuthProviderButton from "./AuthProviderButton"
 
 export function RegisterForm() {
-  const [name, setName] = useState("")
+  const { login, loading, error } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Here you would typically handle the registration logic
-    console.log("Registration attempt", { name, email, password })
-    // For now, we'll just redirect to the dashboard
-    router.push("/dashboard")
-  }
-
-  const handleGoogleRegister = () => {
-    // Here you would typically handle Google registration
-    console.log("Google registration attempt")
-    // For now, we'll just redirect to the dashboard
-    router.push("/dashboard")
+    try {
+      await login({ email, password })
+      router.push("/dashboard")
+      router.refresh() // Force a refresh to update the session
+    } catch (err) {
+      console.error("Login failed:", err)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to login",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle>Create an Account</CardTitle>
-        <CardDescription>Sign up for Khmer Speech Tool</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full">
-            Register
-          </Button>
-        </form>
-        <div className="mt-4 text-center">
-          <Separator className="my-4" />
-          <p className="text-sm text-muted-foreground mb-2">Or continue with</p>
-          <Button variant="outline" className="w-full" onClick={handleGoogleRegister}>
-            <FcGoogle className="mr-2 h-4 w-4" />
-            Register with Google
-          </Button>
+    <div className="flex min-h-screen justify-center items-center bg-background">
+      {/* <div className="absolute -z-20 top-0 left-0 w-full h-full"
+        style={{
+          backgroundImage: 'radial-gradient(circle, #e6e6e6 1px, transparent 1px)',
+          backgroundSize: '10px 10px',
+        }}>
+      </div> */}
+
+      <div className="relative w-full max-w-md px-6 py-12">
+        <div className="flex justify-center mb-8">
+          <Link href="/" className="flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-teal-500" />
+            <span className="text-2xl font-bold text-foreground">
+              Somleng
+            </span>
+          </Link>
         </div>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <a href="/login" className="text-primary hover:underline">
-            Login here
-          </a>
-        </p>
-      </CardFooter>
-    </Card>
+
+        <div className="bg-card/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 border border-border">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Create an account</h1>
+            <p className="text-sm text-muted-foreground">
+              Get started with your free account
+            </p>
+          </div>
+
+          {/* <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="w-full h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full h-11"
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 bg-teal-500 hover:bg-teal-600 text-white font-medium"
+            >
+              {loading ? (
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "Sign in"
+              )}
+            </Button>
+          </form> */}
+
+
+          <div className="space-y-3">
+            <AuthProviderButton provider="google" />
+            <AuthProviderButton provider="github" />
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-card text-muted-foreground">Or</span>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-teal-500 hover:text-teal-600 hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
 
