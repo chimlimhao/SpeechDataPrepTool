@@ -22,10 +22,10 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     return data
   }
 
-  async updateProject(id: string, updates: Partial<Project>): Promise<Project> {
+  async updateProject(id: string, name?: string, description?: string): Promise<Project> {
     const { data, error } = await this.supabase
       .from('projects')
-      .update(updates)
+      .update({ name, description })
       .eq('id', id)
       .select()
       .single()
@@ -43,7 +43,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     if (error) throw error
   }
 
-  async getProjectById(id: string): Promise<Project | null> {
+  async getProjectById(id: string): Promise<Project> {
     const { data, error } = await this.supabase
       .from('projects')
       .select('*')
@@ -141,7 +141,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     }
   }
 
-  async addTranscription(audioFileId: string, content: String, language?: String, confidence?: number): Promise<AudioFile> {
+  async addTranscription(audioFileId: string, content: string, language?: string, confidence?: number): Promise<AudioFile> {
     console.log("Repository: Saving transcription for fileId:", audioFileId);
     console.log("Repository: Content to save:", content);
     
@@ -295,6 +295,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
     try {
       // 1. Get project info
       const project = await this.getProjectById(projectId);
+      if (!project) throw new Error('Project not found');
       const projectName = project.name.replace(/\s+/g, '_').toLowerCase();
       
       // 2. Get all audio files for the project
@@ -339,7 +340,7 @@ export class SupabaseProjectRepositoryImpl implements IProjectRepository {
           }
           
           // Generate a safe filename
-          let safeFileName = file.file_name
+          const safeFileName = file.file_name
             .replace(/[^\w\s.-]/g, '') // Remove special characters except dots, hyphens
             .replace(/\s+/g, '_');     // Replace spaces with underscores
           

@@ -25,11 +25,12 @@ export function ExportDatasetButton({
 }: ExportDatasetButtonProps) {
   const { exportProjectDataset } = useProject()
   const { toast } = useToast()
-  const [isExporting, setIsExporting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [includeProcessed, setIncludeProcessed] = useState(true)
 
   const handleExport = async (includeProcessed: boolean = true) => {
     try {
-      setIsExporting(true)
+      setIsLoading(true)
       const blob = await exportProjectDataset(projectId, includeProcessed)
       
       // Create a download link
@@ -57,7 +58,7 @@ export function ExportDatasetButton({
         variant: "destructive",
       })
     } finally {
-      setIsExporting(false)
+      setIsLoading(false)
     }
   }
 
@@ -67,10 +68,10 @@ export function ExportDatasetButton({
         <Button 
           variant="outline"
           // size="sm"
-          disabled={disabled || isExporting}
+          disabled={disabled || isLoading}
           className="bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 hover:text-black"
         >
-          {isExporting ? (
+          {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Exporting...
@@ -86,13 +87,13 @@ export function ExportDatasetButton({
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
           onClick={() => handleExport(true)}
-          disabled={isExporting}
+          disabled={isLoading}
         >
           Export Completed Files Only
         </DropdownMenuItem>
         <DropdownMenuItem 
           onClick={() => handleExport(false)}
-          disabled={isExporting}
+          disabled={isLoading}
         >
           Export All Files
         </DropdownMenuItem>

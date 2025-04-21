@@ -33,13 +33,12 @@ export interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | null>(null);
 
-const projectRepository = new SupabaseProjectRepositoryImpl();
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const projectRepository = useMemo(() => new SupabaseProjectRepositoryImpl(), []);
+  const projectRepository = useMemo(() => new SupabaseProjectRepositoryImpl(supabase), []);
   
   // Audio file URL cache
   const [audioUrlCache, setAudioUrlCache] = useState<Record<string, { url: string, timestamp: number }>>({});
@@ -73,7 +72,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const project = await projectRepository.createProject(name, description);
+      const project = await projectRepository.createProject(name, description || '');
       setProjects(prev => [...prev, project]);
       return project;
     } catch (err) {
@@ -88,7 +87,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       setError(null);
-      const project = await projectRepository.updateProject(id, name, description);
+      const project = await projectRepository.updateProject(id, name || '', description || '');
       setProjects(prev => prev.map(p => p.id === id ? project : p));
       return project;
     } catch (err) {
@@ -182,7 +181,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const getAudioFileContent = useCallback(async (fileId: string, useCleanedVersion: boolean = false) => {
+  const getAudioFileContent = useCallback(async (fileId: string, useCleanedVersion = false) => {
     try {
       // Check session storage first
       const cacheKey = `audio_${fileId}_${useCleanedVersion ? 'clean' : 'raw'}`;
@@ -201,6 +200,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       return signedUrl;
     } catch (error) {
       console.error('Provider: Error getting audio file content:', error);
+      setError(error as Error);
       throw error;
     }
   }, [projectRepository]);
@@ -235,14 +235,15 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const exportProjectDataset = useCallback(async (projectId: string, includeProcessed: boolean = true) => {
+  const exportProjectDataset = useCallback(async (projectId: string, includeProcessed = true) => {
     try {
       setLoading(true);
       setError(null);
       return await projectRepository.exportProjectDataset(projectId, includeProcessed);
-    } catch (err) {
-      setError(err as Error);
-      throw err;
+    } catch (error) {
+      console.error("Error exporting project dataset:", error);
+      setError(error as Error);
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -273,6 +274,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+
   const value: ProjectContextType = {
     projects,
     loading,
@@ -280,7 +282,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     createProject,
     updateProject,
     deleteProject,
-    getProjectById,
+    getProjectById: async (id: string): Promise<Project> => {
+      const project = await projectRepository.getProjectById(id);
+      if (!project) throw new Error(`Project with id ${id} not found`);
+      return project;
+    },
     getUserProjects,
     addAudioFile,
     getProjectAudioFiles,

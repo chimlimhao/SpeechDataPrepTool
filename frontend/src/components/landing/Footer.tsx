@@ -54,7 +54,7 @@ export function Footer() {
         
         {/* Right Floating Khmer Text */}
         <div className="hidden md:flex rotate-[-12deg] absolute bottom-10 right-10 p-6 w-32 h-32 bg-white/80 backdrop-blur-sm rounded-md shadow-lg items-center justify-center text-2xl italic text-black-800">
-          ក​ ខ គ
+          ក ខ គ
         </div>
       </div>
     </footer>

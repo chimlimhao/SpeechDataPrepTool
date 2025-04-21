@@ -66,7 +66,7 @@ export function CallToAction({
 
       {/* Bottom Right Floating Khmer Text */}
       <div className="rotate-[-12deg] absolute bottom-10 right-10 p-6 w-32 h-32 bg-white/80 backdrop-blur-sm rounded-md shadow-lg flex items-center justify-center text-2xl italic text-black-800">
-        ក​ ខ គ
+        ក ខ គ
       </div>
 
       {/* Project Stats Card */}

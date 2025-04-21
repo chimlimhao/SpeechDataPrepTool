@@ -68,7 +68,7 @@ export function HeroSection({
 
       {/* Right Floating Khmer Text */}
       <div className="hidden md:flex top-1/2 rotate-12 absolute bottom-10 right-10 p-6 w-24 h-24 md:w-32 md:h-32 bg-card/80 backdrop-blur-sm rounded-md shadow-lg items-center justify-center text-2xl italic transform hover:scale-105 transition-transform duration-200">
-        ក​ ខ គ
+        ក ខ គ
       </div>
 
       {/* Project Stats Card */}

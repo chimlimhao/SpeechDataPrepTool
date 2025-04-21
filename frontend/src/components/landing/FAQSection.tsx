@@ -14,7 +14,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "What file formats are supported?",
-    answer: "Currently, Somleng supports WAV audio files. We're working on expanding support for more formats in future updates."
+    answer: "Currently, Somleng supports WAV audio files. We&apos;re working on expanding support for more formats in future updates."
   },
   {
     question: "How accurate is the speech recognition?",
@@ -41,7 +41,7 @@ export function FAQSection() {
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Got questions about Somleng? Find answers to common questions below. If you don't see what you're looking for, feel free to contact us.
+            Got questions about Somleng? Find answers to common questions below. If you don&apos;t see what you&apos;re looking for, feel free to contact us.
           </p>
         </div>
         

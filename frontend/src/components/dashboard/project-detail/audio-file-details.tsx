@@ -10,7 +10,6 @@ import { PlayCircle, PauseCircle, Loader2 } from "lucide-react"
 import { cn, formatFileSize } from "@/lib/utils"
 import { useProject } from "@/providers/project.provider"
 import { useToast } from "@/hooks/use-toast"
-// @ts-ignore - Ignore type issues with WaveSurfer
 import WaveSurfer from 'wavesurfer.js'
 
 interface AudioFileDetailsProps {
