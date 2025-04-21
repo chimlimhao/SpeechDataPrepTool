@@ -25,7 +25,7 @@ export function UploadModal({ isOpen, onClose, projectId, onFileUploaded }: Uplo
           <DialogTitle className="text-2xl">Upload Audio Files</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="individual" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="individual" className="flex items-center gap-2">
               <UploadIcon className="h-4 w-4" />
               Individual
@@ -34,10 +34,10 @@ export function UploadModal({ isOpen, onClose, projectId, onFileUploaded }: Uplo
               <FolderUp className="h-4 w-4" />
               Folder
             </TabsTrigger>
-            <TabsTrigger value="record" className="flex items-center gap-2">
+            {/* <TabsTrigger value="record" className="flex items-center gap-2">
               <Pencil className="h-4 w-4" />
               Record
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="individual" className="mt-6">

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { PlusCircle, Folder, MoreVertical, AlertCircle } from "lucide-react"
+import { PlusCircle, Folder, MoreVertical, AlertCircle, Link } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useProject } from "@/providers/project.provider"
+import { Separator } from "@/components/ui/separator"
 interface DashboardProps {
   onSelectProject: (projectId: string) => void
 }
@@ -115,7 +116,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
         <h2 className="text-2xl font-bold">Project Dashboard</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button disabled={projects.length >= 3}>
+            <Button disabled={projects.length >= 3} className="bg-teal-500 mb-6 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">
               <PlusCircle className="mr-2 h-4 w-4" />
               New Project
             </Button>
@@ -123,7 +124,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Project</DialogTitle>
-              <DialogDescription>Add a new project to your Khmer Speech Tool dashboard.</DialogDescription>
+              <DialogDescription>Add a new project to your Somleng dashboard.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
@@ -150,11 +151,13 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleCreateProject}>Create Project</Button>
+              <Button onClick={handleCreateProject} className="bg-teal-500 mb-6 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2">Create Project</Button>
+             
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+      <Separator className="border-teal-500"/>
 
       {projects.length === 0 ? (
         <div className="text-center py-10">
@@ -167,10 +170,10 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
       ) : (
         <>
           {projects.length >= 3 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Project Limit Reached</AlertTitle>
-              <AlertDescription>
+            <Alert className="border border-red-500 text-black">
+              <AlertCircle className="h-4 w-4" style={{ color: 'red' }} />
+              <AlertTitle className="text-red-500">Project Limit Reached</AlertTitle>
+              <AlertDescription className="text-red-500">
                 You have reached the maximum limit of 3 projects. Delete an existing project to create a new one.
               </AlertDescription>
             </Alert>
@@ -179,7 +182,7 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
             {projects.map((project) => (
               <Card
                 key={project.id}
-                className="cursor-pointer transition-colors hover:bg-accent/50"
+                className="cursor-pointer transition-colors hover:bg-accent/50 border border-teal-500"
                 onClick={() => onSelectProject(project.id)}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -197,20 +200,25 @@ export function Dashboard({ onSelectProject }: DashboardProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteProject(project.id)
-                      }}>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteProject(project.id)
+                        }} 
+                        className="text-red-500 focus:text-red-500 focus:bg-red-50"
+                      >
                         Delete Project
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
+                <Separator/>
                 <CardContent>
                   <CardDescription>{project.description}</CardDescription>
                   <div className="mt-4">
                     <Progress value={project.progress} className="h-2" />
-                    <p className="mt-2 text-xs text-muted-foreground">{project.progress}% complete</p>
+                    <p className="mt-2 text-xs text-muted-foreground ">{project.progress}% complete</p>
                   </div>
                   <div className="mt-4 flex items-center">
                     <Folder className="mr-2 h-4 w-4 opacity-70" />

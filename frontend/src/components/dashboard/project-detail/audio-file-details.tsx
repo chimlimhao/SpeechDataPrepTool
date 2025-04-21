@@ -449,10 +449,10 @@ export function AudioFileDetails({
               <p className="text-muted-foreground">Status</p>
               <Badge variant="outline" className={cn(
                 {
-                  'bg-green-500/10 text-green-700 border-green-500/20': status === 'completed',
-                  'bg-orange-500/10 text-orange-700 border-orange-500/20': status === 'pending',
-                  'bg-blue-500/10 text-blue-700 border-blue-500/20': status === 'processing',
-                  'bg-red-500/10 text-red-700 border-red-500/20': status === 'failed'
+                  'bg-green-100 text-green-600': status === 'completed',
+                  'bg-orange-100 text-orange-600': status === 'pending',
+                  'bg-blue-100 text-blue-600': status === 'processing',
+                  'bg-red-100 text-red-600': status === 'failed'
                 }
               )}>
                 {status.charAt(0).toUpperCase() + status.slice(1)}

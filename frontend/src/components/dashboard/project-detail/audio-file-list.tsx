@@ -65,7 +65,7 @@ export function AudioFileList({
             className="pl-8"
           />
         </div>
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
@@ -80,7 +80,7 @@ export function AudioFileList({
           >
             <Grid className="h-4 w-4" />
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* File List */}
@@ -161,33 +161,7 @@ export function AudioFileList({
                       </Tooltip>
                     </TooltipProvider>
                     
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (selectedFile?.id === file.id && isExpanded) {
-                                onSelectFile(null)
-                              } else {
-                                onSelectFile(file)
-                              }
-                            }}
-                          >
-                            {selectedFile?.id === file.id && isExpanded ? (
-                              <Minimize2 className="h-4 w-4" />
-                            ) : (
-                              <Maximize2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {selectedFile?.id === file.id && isExpanded ? 'Collapse details' : 'Expand details'}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                   
                   </div>
                 </TableCell>
               </TableRow>

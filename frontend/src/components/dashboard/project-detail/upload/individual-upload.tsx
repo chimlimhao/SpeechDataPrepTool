@@ -19,6 +19,16 @@ export function IndividualUpload({ projectId, onFileUploaded }: IndividualUpload
 
     for (const file of Array.from(files)) {
       try {
+        // Check if file is wav
+        if (!file.name.toLowerCase().endsWith('.wav')) {
+          toast({
+            title: "Invalid Format",
+            description: `${file.name} is not a WAV file. Only WAV files are supported.`,
+            variant: "destructive",
+          })
+          continue
+        }
+
         await uploadFile(file)
         toast({
           title: "Success",
@@ -38,15 +48,15 @@ export function IndividualUpload({ projectId, onFileUploaded }: IndividualUpload
     <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-10 space-y-4">
       <p className="text-lg font-medium text-center">Upload individual audio files</p>
       <p className="text-sm text-muted-foreground text-center">
-        Max file size: 50MB
+        Max file size: --
         <br />
-        mp3, wav, m4a, flac
+        Format: WAV only (.wav)
       </p>
       <Button asChild variant="secondary" size="lg" className="mt-4">
-        <label className="cursor-pointer">
+        <label className="cursor-pointer bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 hover:text-black">
           <UploadIcon className="mr-2 h-4 w-4" />
           Select Files
-          <input type="file" className="hidden" onChange={handleFileChange} multiple accept="audio/*" />
+          <input type="file" className="hidden" onChange={handleFileChange} multiple accept=".wav,audio/wav" />
         </label>
       </Button>
     </div>

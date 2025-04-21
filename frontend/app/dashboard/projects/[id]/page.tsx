@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useToast } from "@/hooks/use-toast"
 import type { Project, AudioFile } from "@/types/database.types"
 import { UploadModal } from "@/components/dashboard/project-detail/upload-modal"
@@ -25,6 +25,7 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true)
   const [selectedFile, setSelectedFile] = useState<AudioFile | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
+  const uploadingFiles = useRef(new Set<string>())
 
   const loadProjectData = useCallback(async () => {
     try {
@@ -58,7 +59,10 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
     const unsubscribeFiles = subscribeToAudioFileChanges(params.id, {
       onInsert: (newFile) => {
         setAudioFiles(prev => {
-          // Check if file already exists to prevent duplicates
+          if (uploadingFiles.current.has(newFile.id)) {
+            uploadingFiles.current.delete(newFile.id)
+            return prev
+          }
           if (prev.some(file => file.id === newFile.id)) {
             return prev;
           }
@@ -70,7 +74,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
       },
       onUpdate: (updatedFile) => {
         setAudioFiles(prev => {
-          // Check if the file exists before updating
           if (!prev.some(file => file.id === updatedFile.id)) {
             return prev;
           }
@@ -90,16 +93,15 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
   // Clean up audio cache when component unmounts
   useEffect(() => {
     return () => {
-      // This part only runs when the project page unmounts
       clearAudioCache();
     };
   }, [clearAudioCache]);
 
   const handleFileUploaded = (newFile: AudioFile) => {
-    // Update audio files list
+    uploadingFiles.current.add(newFile.id)
+    
     setAudioFiles(prev => [newFile, ...prev]);
     
-    // Update project stats
     if (project) {
       setProject(prev => {
         if (!prev) return prev;
@@ -204,7 +206,6 @@ export default function ProjectPage({ params }: { params: { id: string } }) {
                     fileName={selectedFile.file_name} 
                     projectName={project?.name || ''}
                     fileSize={selectedFile.file_size}
-                    sampleRate={selectedFile.sample_rate || 44.1}
                     status={selectedFile.transcription_status}
                     transcription={selectedFile.transcription_content || ''}
                   />

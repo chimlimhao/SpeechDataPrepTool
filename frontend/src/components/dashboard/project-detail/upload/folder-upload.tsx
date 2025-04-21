@@ -36,8 +36,9 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
       console.log('Loading zip file...')
       const contents = await zip.loadAsync(zipFile)
       
+      // Only accept WAV files
       const audioFiles = Object.values(contents.files).filter(file => 
-        !file.dir && /\.(mp3|wav|m4a|flac)$/i.test(file.name)
+        !file.dir && file.name.toLowerCase().endsWith('.wav')
       )
 
       setTotalFiles(audioFiles.length)
@@ -45,7 +46,7 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
       if (audioFiles.length === 0) {
         toast({
           title: "Error",
-          description: "No audio files found in the zip file",
+          description: "No WAV files found in the zip file. Only WAV files are supported.",
           variant: "destructive",
         })
         return
@@ -53,13 +54,20 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
 
       let successCount = 0
       let failCount = 0
+      let nonWavFilesFound = false
+
+      // Check if there are any non-WAV files in the zip
+      const allFiles = Object.values(contents.files).filter(file => !file.dir)
+      if (allFiles.length > audioFiles.length) {
+        nonWavFilesFound = true
+      }
 
       for (let index = 0; index < audioFiles.length; index++) {
         const zipEntry = audioFiles[index];
         try {
           const blob = await zipEntry.async("blob")
           const file = new File([blob], zipEntry.name, { 
-            type: `audio/${zipEntry.name.split('.').pop()?.toLowerCase()}` 
+            type: 'audio/wav'
           })
           
           await uploadFile(file)
@@ -78,13 +86,21 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
         }
       }
 
+      if (nonWavFilesFound) {
+        toast({
+          title: "Warning",
+          description: "Some non-WAV files were found in the zip and were ignored.",
+          variant: "default",
+        })
+      }
+
       toast({
-        title: successCount > 0 ? "Success" : "Complete with Errors",
-        description: `Processed ${audioFiles.length} files: ${successCount} succeeded, ${failCount} failed`,
+        title: "Upload Complete",
+        description: `Successfully processed ${successCount} files. ${failCount} files failed.`,
         variant: successCount > 0 ? "default" : "destructive",
       })
     } catch (error) {
-      console.error("Error processing zip file:", error)
+      console.error('Error processing zip file:', error)
       toast({
         title: "Error",
         description: "Failed to process zip file",
@@ -98,35 +114,35 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
     }
   }
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files?.length) return
-
-    const file = files[0]
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
     if (!file.name.toLowerCase().endsWith('.zip')) {
       toast({
         title: "Error",
-        description: "Please upload a zip file",
+        description: "Please select a ZIP file",
         variant: "destructive",
       })
       return
     }
-    await handleZipUpload(file)
+    
+    handleZipUpload(file)
   }
 
   return (
     <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-10 space-y-4">
       <p className="text-lg font-medium text-center">Upload a zip file containing audio files</p>
       <p className="text-sm text-muted-foreground text-center">
-        Max total size: 500MB
+        Max total size: --
         <br />
-        Supported formats inside zip: mp3, wav, m4a, flac
+        Format: WAV files only (.wav)
       </p>
       {isUploading && (
         <div className="w-full space-y-2">
-          <Progress value={uploadProgress} className="w-full" />
+          {/* <Progress value={uploadProgress} className="w-full" /> */}
           <p className="text-sm text-center text-muted-foreground">
-            Processing {processedFiles} of {totalFiles} files ({Math.round(uploadProgress)}%)
+            Processing {Math.round(processedFiles / 2)}
           </p>
         </div>
       )}
@@ -134,7 +150,7 @@ export function FolderUpload({ projectId, onFileUploaded }: FolderUploadProps) {
         asChild 
         variant="secondary" 
         size="lg" 
-        className="mt-4"
+        className="mt-4 bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
         disabled={isUploading}
       >
         <label className="cursor-pointer">

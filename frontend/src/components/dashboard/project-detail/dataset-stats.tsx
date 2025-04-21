@@ -44,21 +44,21 @@ export function DatasetStats({ project }: DatasetStatsProps) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Dataset Statistics</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="flex items-center gap-3 p-4 rounded-lg border">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-2 border-dashed rounded-lg p-4">
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-teal-500">
           <FileAudio className="h-5 w-5 text-muted-foreground" />
           <div>
             <p className="text-sm font-medium">Total Files</p>
             <p className="text-2xl font-bold">{project.total_files}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 p-4 rounded-lg border">
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-teal-500">
           <div>
             <p className="text-sm font-medium">Total Size</p>
             <p className="text-2xl font-bold">{formatFileSize(project.total_size)}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 p-4 rounded-lg border">
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-teal-500">
           <div>
             <p className="text-sm font-medium">Total Duration</p>
             <p className="text-2xl font-bold">{project.total_duration ? formatDuration(project.total_duration) : '0:00'}</p>

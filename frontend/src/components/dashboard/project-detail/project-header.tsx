@@ -49,13 +49,13 @@ export function ProjectHeader({ project, audioFiles, onProcessAll, onUpload }: P
         <Button 
           variant="outline"
           onClick={() => handleProcessAll(audioFiles, project.id)}
-          className="gap-2"
+          className="gap-2 bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
           disabled={isProcessing}
         >
           <PlayCircle className="h-4 w-4" />
           Process All
         </Button>
-        <Button onClick={onUpload}>
+        <Button onClick={onUpload} className="bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 hover:text-black">
           <Upload className="mr-2 h-4 w-4" />
           Upload
         </Button>

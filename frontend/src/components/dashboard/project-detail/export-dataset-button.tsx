@@ -66,8 +66,9 @@ export function ExportDatasetButton({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline"
-          size="sm"
+          // size="sm"
           disabled={disabled || isExporting}
+          className="bg-teal-500 text-white rounded-md border-2 border-green-700 shadow-md hover:bg-teal-600 focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2 hover:text-black"
         >
           {isExporting ? (
             <>
